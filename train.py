@@ -13,3 +13,7 @@ parser.add_argument('--map', '-m', default='',
                     help='map to run the game')
 
 args = parser.parse_args()
+
+import tensorflow as tf
+
+tf.enable_eager_execution()
