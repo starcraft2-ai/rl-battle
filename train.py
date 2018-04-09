@@ -24,7 +24,6 @@ parser.add_argument('--learning_rate', type=float, default=0.1,
 args = parser.parse_args()
 
 import tensorflow as tf
-
 tf.enable_eager_execution()
 
 def main():
