@@ -1,46 +1,76 @@
+from utils import GameState, AgentState, CommonState, ActionTable
+
 # TODO
-'''
-    Actor network
-'''
-class ActorNetwork():
+class BaseNetwork:
 
     '''
-        Init actor network
-        input inclues but not only:
-        * state size 
-        * number of actions
-        * input size of BiRNN
-        * hidden layer size of BiRNN
-        * output size of BiRNN
-        * batch size
-        ...
+        Base network
     '''
+
     def __init__(self, **kwargs):
-        pass
-
-    '''
-        delegate to _inference
-    '''
-    def forward(self, state, agents):
-        return self._inference(state, agents)
-
-    '''
-        input: state, hidden information
-        output: action probabilities
-    '''
-    def _inference(self, state, agents):
+        '''
+            init actor network
+            input inclues but not only:
+            * state size 
+            * number of actions
+            * input size of BiRNN
+            * hidden layer size of BiRNN
+            * output size of BiRNN
+            * batch size
+            ...
+        '''
         pass
     
+    def save_model(self, path):
+        '''
+            save models
+        '''
+        pass
+    
+    def load_model(self, path):
+        '''
+            load models
+        '''
+        pass
+
+# TODO
+
+class ActorNetwork(BaseNetwork):
+
     '''
-        delegate to _update_params
+        Actor network
     '''
+
+    def __init__(self, **kwargs):
+        super(ActorNetwork, self).__init__(kwargs)
+
+    def forward(self, state : GameState):
+        '''
+            delegate to _inference
+        '''
+        return self._inference(state)
+
+    def _inference(self, state : GameState):
+        '''
+            input: state, hidden information
+            output: action probabilities
+        '''
+        common_state, agent_state = state
+        pass
+    
+    def back_prop(self, cost_function):
+        pass
+    
     def update_params(self, **kwargs):
+        '''
+            delegate to _update_params
+        '''
         self._update_params(**kwargs)
     
-    '''
-        input: parameters used to update weights
-    '''
     def _update_params(self, **kwargs):
+        '''
+            input: parameters used to update weights
+        '''
         pass
 
     def __add__(self, other):
@@ -50,48 +80,42 @@ class ActorNetwork():
         pass
 
 # TODO
-'''
-    Critic network
-'''
-class CriticNetwork():
+class CriticNetwork(BaseNetwork):
 
     '''
-        Init Critic network
-        input inclues but not only:
-        * state size 
-        * number of actions
-        * input size of BiRNN
-        * hidden layer size of BiRNN
-        * output size of BiRNN
-        * batch size
-        ...
+        Critic network
     '''
+
     def __init__(self, **kwargs):
+        super(CriticNetwork, self).__init__(kwargs)
+
+    def forward(self, state : GameState, action_probs : ActionTable):
+        '''
+            delegate to _inference
+        '''
+        return self._inference(state, action_probs)
+
+    def _inference(self, state : GameState, action_probs : ActionTable):
+        '''
+            input: state, action probability
+            output: Q value
+        '''
+        common_state, agent_state = state
         pass
 
-    '''
-        delegate to _inference
-    '''
-    def forward(self, state, agents, actions):
-        return self._inference(state, agents, actions)
-
-    '''
-        input: state, action probability
-        output: Q value
-    '''
-    def _inference(self, state, agents, actions):
+    def back_prop(self, cost_function):
         pass
-    
-    '''
-        delegate to _update_params
-    '''
-    def update_params(self, **kwargs):
+
+    def update_params(self, **kwargs): 
+        '''
+            delegate to _update_params
+        '''
         self._update_params(**kwargs)
     
-    '''
-        input: parameters used to update weights
-    '''
     def _update_params(self, **kwargs):
+        '''
+            input: parameters used to update weights
+        '''    
         pass
     
     def __add__(self, other):
