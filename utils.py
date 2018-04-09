@@ -3,8 +3,9 @@ from typing import Tuple, List
 CommonState = List[float]
 AgentState = List[float]
 GameState = Tuple[CommonState,AgentState]
-Coodinates = Tuple[float, float]
-ActionTable = List[List[float]]
+Coordinates = Tuple[float, float]
+ActionProbablity = List[float]
+ActionTable = List[ActionProbablity]
 Actions = List[int]
 Transition = Tuple[GameState, Actions, GameState]
 

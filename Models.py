@@ -1,4 +1,4 @@
-from utils import GameState, AgentState, CommonState, ActionTable
+from utils import GameState, AgentState, CommonState, ActionTable, Coordinates
 
 # TODO
 class BaseNetwork:
@@ -44,7 +44,7 @@ class ActorNetwork(BaseNetwork):
     def __init__(self, **kwargs):
         super(ActorNetwork, self).__init__(kwargs)
 
-    def forward(self, state : GameState):
+    def forward(self, state : GameState) -> (ActionTable, Coordinates):
         '''
             delegate to _inference
         '''
