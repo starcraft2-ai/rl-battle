@@ -12,3 +12,7 @@ $ source .env/bin/activate
 ```
 pip install -r requirements.txt
 ```
+
+## Structure
+![Call Tree](assets/Call Tree.png)
+
