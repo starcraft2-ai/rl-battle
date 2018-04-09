@@ -1,7 +1,9 @@
 from typing import Tuple, List
 
 GameState = Tuple[List[float], List[float]]
-Actions = List[Tuple[int, float]]
+Coodinates = Tuple[float, float]
+ActionTable = List[List[float]]
+Actions = List[int]
 Transition = Tuple[GameState, Actions, GameState]
 
 import random
