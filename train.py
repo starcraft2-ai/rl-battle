@@ -42,7 +42,7 @@ def main():
         state = env.get_current_state()
 
         for t in range(args.maxsteps):
-            (actions_table, coodinates) = actor.forward(state)
+            (actions_table, coordinates) = actor.forward(state)
             best_action = best_actions(actions_table)
             env.transit(best_action)
 
@@ -54,8 +54,9 @@ def main():
 
             Qs = []
             for transition in M:
-                (_, _, trans_state_next) = transition
-                (trans_actions_table_next, _) = target_actor.forward(trans_state_next)
+                (trans_state, _, trans_state_next) = transition
+                (trans_common_state_next, trans_agents_state_next) = trans_state_next
+                (trans_actions_table_next, trans_coordinates_next) = target_actor.forward(trans_common_state_next, trans_agents_state_next)
                 trans_best_action_next = best_actions(trans_actions_table_next)
                 
                 Qs.append(

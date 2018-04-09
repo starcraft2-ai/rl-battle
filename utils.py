@@ -5,7 +5,7 @@ tf.enable_eager_execution()
 CommonState = List[float]
 AgentState = List[float]
 GameState = Tuple[CommonState,AgentState]
-Coodinates = Tuple[float, float]
+Coordinates = Tuple[float, float]
 ActionProbablity = List[float]
 ActionTable = List[ActionProbablity]
 Actions = List[int]
