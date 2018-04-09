@@ -12,3 +12,7 @@ $ source .env/bin/activate
 ```
 pip install -r requirements.txt
 ```
+
+## Structure
+![Call Tree](https://github.com/starcraft2-ai/rl-battle/raw/master/assets/Call%20Tree.png)
+
