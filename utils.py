@@ -1,7 +1,11 @@
 from typing import Tuple, List
 
-GameState = Tuple[List[float], List[float]]
-Actions = List[Tuple[int, float]]
+CommonState = List[float]
+AgentState = List[float]
+GameState = Tuple[CommonState,AgentState]
+Coodinates = Tuple[float, float]
+ActionTable = List[List[float]]
+Actions = List[int]
 Transition = Tuple[GameState, Actions, GameState]
 
 import random
@@ -24,3 +28,9 @@ class Buffer:
         Fetch random size 
         """
         return random.sample(self.queue, size)
+
+def best_actions(action_table: ActionTable) -> Actions:
+    pass
+
+def Q_estimate():
+    pass
