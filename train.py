@@ -25,8 +25,6 @@ args = parser.parse_args()
 
 import tensorflow as tf
 
-tf.enable_eager_execution()
-
 def main():
     actor  = ActorNetwork()
     critic = CriticNetwork()
@@ -42,7 +40,6 @@ def main():
     for episodes in range(args.episodes):
         env.reset_env()
         state = env.get_current_state()
-        (common_state, agents_state) = state
 
         for t in range(args.maxsteps):
             (actions_table, coordinates) = actor.forward(state)
@@ -63,10 +60,7 @@ def main():
                 trans_best_action_next = best_actions(trans_actions_table_next)
                 
                 Qs.append(
-                    target_critic.forward(
-                        trans_common_state_next, 
-                        trans_agents_state_next, 
-                        trans_best_action_next) * args.lambdaa + reward
+                    target_critic.forward(trans_state_next, trans_best_action_next) * args.lambdaa + reward
                 )
             
             # TODO: BP

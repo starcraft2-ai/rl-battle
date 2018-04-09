@@ -1,4 +1,6 @@
 from typing import Tuple, List
+import tensorflow as tf
+tf.enable_eager_execution()
 
 CommonState = List[float]
 AgentState = List[float]
@@ -31,7 +33,4 @@ class Buffer:
         return random.sample(self.queue, size)
 
 def best_actions(action_table: ActionTable) -> Actions:
-    pass
-
-def Q_estimate():
-    pass
+    return [tf.argmax(action_probablity) for action_probablity in action_table]
