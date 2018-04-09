@@ -54,9 +54,8 @@ def main():
 
             Qs = []
             for transition in M:
-                (trans_state, _, trans_state_next) = transition
-                (trans_common_state_next, trans_agents_state_next) = trans_state_next
-                (trans_actions_table_next, trans_coordinates_next) = target_actor.forward(trans_common_state_next, trans_agents_state_next)
+                (_, _, trans_state_next) = transition
+                (trans_actions_table_next, _) = target_actor.forward(trans_state_next)
                 trans_best_action_next = best_actions(trans_actions_table_next)
                 
                 Qs.append(
