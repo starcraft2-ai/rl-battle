@@ -1,4 +1,5 @@
 import pysc2
+from utils import GameState
 
 # TODO
 class BicNetAgent(pysc2.agents.base_agent.BaseAgent):
@@ -39,7 +40,7 @@ class Environment:
         '''
         pass
 
-    def get_current_state(self):
+    def get_current_state(self) -> GameState:
         '''
         return current state information
         '''
