@@ -15,20 +15,20 @@ class ActorNetwork():
         * batch size
         ...
     '''
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
     '''
         delegate to _inference
     '''
-    def forward(self, s, h0):
-        return self._inference(s, h0)
+    def forward(self, state, agents):
+        return self._inference(state, agents)
 
     '''
         input: state, hidden information
         output: action probabilities
     '''
-    def _inference(self, s, h0):
+    def _inference(self, state, agents):
         pass
     
     '''
@@ -41,6 +41,12 @@ class ActorNetwork():
         input: parameters used to update weights
     '''
     def _update_params(self, **kwargs):
+        pass
+
+    def __add__(self, other):
+        pass
+
+    def __mul__(self, other):
         pass
 
 # TODO
@@ -60,20 +66,20 @@ class CriticNetwork():
         * batch size
         ...
     '''
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
     '''
         delegate to _inference
     '''
-    def forward(self, s, h0):
-        return self._inference(s, h0)
+    def forward(self, state, agents, actions):
+        return self._inference(state, agents, actions)
 
     '''
         input: state, action probability
         output: Q value
     '''
-    def _inference(self, s, a):
+    def _inference(self, state, agents, actions):
         pass
     
     '''
@@ -86,4 +92,10 @@ class CriticNetwork():
         input: parameters used to update weights
     '''
     def _update_params(self, **kwargs):
+        pass
+    
+    def __add__(self, other):
+        pass
+
+    def __mul__(self, other):
         pass
