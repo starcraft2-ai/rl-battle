@@ -24,7 +24,6 @@ parser.add_argument('--learning_rate', type=float, default=0.1,
 args = parser.parse_args()
 
 import tensorflow as tf
-tf.enable_eager_execution()
 
 def main():
     actor  = ActorNetwork()
@@ -41,10 +40,9 @@ def main():
     for episodes in range(args.episodes):
         env.reset_env()
         state = env.get_current_state()
-        (common_state, agents_state) = state
 
         for t in range(args.maxsteps):
-            (actions_table, coodinates) = actor.forward(common_state, agents_state)
+            (actions_table, coodinates) = actor.forward(state)
             best_action = best_actions(actions_table)
             env.transit(best_action)
 
@@ -56,16 +54,12 @@ def main():
 
             Qs = []
             for transition in M:
-                (trans_state, _, trans_state_next) = transition
-                (trans_common_state_next, trans_agents_state_next) = trans_state_next
-                (trans_actions_table_next, trans_coodinates_next) = target_actor.forward(trans_common_state_next, trans_agents_state_next)
+                (_, _, trans_state_next) = transition
+                (trans_actions_table_next, _) = target_actor.forward(trans_state_next)
                 trans_best_action_next = best_actions(trans_actions_table_next)
                 
                 Qs.append(
-                    target_critic.forward(
-                        trans_common_state_next, 
-                        trans_agents_state_next, 
-                        trans_best_action_next) * args.lambdaa + reward
+                    target_critic.forward(trans_state_next, trans_best_action_next) * args.lambdaa + reward
                 )
             
             # TODO: BP
