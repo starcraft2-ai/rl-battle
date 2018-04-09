@@ -44,7 +44,10 @@ def main():
         for t in range(args.maxsteps):
             (actions_table, coordinates) = actor.forward(state)
             best_action = best_actions(actions_table)
-            env.transit(best_action)
+
+            if not env.transit(best_action):
+                # Game over
+                break
 
             reward = env.get_reward()
             new_state = env.get_current_state()
@@ -66,6 +69,8 @@ def main():
 
             target_actor = target_actor * (1 - args.learning_rate) + args.learning_rate * actor
             target_critic = target_critic * (1 - args.learning_rate) + args.learning_rate * critic
+
+            state = new_state
 
 if __name__ == '__main__':
     main()
