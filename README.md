@@ -14,5 +14,6 @@ pip install -r requirements.txt
 ```
 
 ## Structure
-![Call Tree](assets/Call Tree.png?raw=true "Call Tree")
+
+![Call Tree](assets/Call Tree.png)
 
