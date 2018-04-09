@@ -18,7 +18,9 @@ parser.add_argument('--minisize', type=int, default=64,
 parser.add_argument('--sample_batch_size', '-b', type=int, default=8,
                     help='sample_batch_size')
 parser.add_argument('--lambdaa', type=float, default=0.2,
-                    help='') 
+                    help='Discount rate') 
+parser.add_argument('--learning_rate', type=float, default=0.1,
+                    help='Learning rate') 
 args = parser.parse_args()
 
 import tensorflow as tf
@@ -66,6 +68,11 @@ def main():
                         trans_agents_state_next, 
                         trans_best_action_next) * args.lambdaa + reward
                 )
+            
+            # TODO: BP
+
+            target_actor = target_actor * (1 - args.learning_rate) + args.learning_rate * actor
+            target_critic = target_critic * (1 - args.learning_rate) + args.learning_rate * critic
 
 if __name__ == '__main__':
     main()
