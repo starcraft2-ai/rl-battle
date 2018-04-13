@@ -1,5 +1,6 @@
-# IDE
-.vscode/
+# Project specific
+out/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -102,4 +103,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+.idea
 .DS_Store
