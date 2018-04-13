@@ -3,10 +3,10 @@
 ## Benchmarks
 
 ### Repository Introduction
-1. `refs/pysc2-rl-agents`: A2C method referenced from [simonmeister's repo](https://github.com/simonmeister/pysc2-rl-agents), abbreviation as `simon-a2c` separately
+1. `refs/pysc2-rl-agents`: A2C method referenced from [simonmeister's repo](https://github.com/simonmeister/pysc2-rl-agents), abbreviation as `simon-a2c`
 
 ### Results
-| Map | `simon-a2c` | random search | DeepMind human |
+| Map | `simon-a2c` | random agent | DeepMind human |
 | --- | --- | --- | --- |
 | DefeatRoaches | N/A | N/A | mean 41(max 81) |
 | DefeatZerglingsAndBanelings | N/A | N/A | mean 729(max 757) |
