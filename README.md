@@ -3,7 +3,7 @@
 ## Benchmarks
 
 ### Repository Introduction
-1. `refs/pysc2-rl-agents`: A2C and PPO method referenced from [simonmeister's repo](https://github.com/simonmeister/pysc2-rl-agents), abbreviation as `simon-a2c` and `simon-ppo` separately
+1. `refs/pysc2-rl-agents`: A2C method referenced from [simonmeister's repo](https://github.com/simonmeister/pysc2-rl-agents), abbreviation as `simon-a2c` separately
 
 ### Results
 | Map | `simon-a2c` | random search | DeepMind human |
