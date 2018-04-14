@@ -7,7 +7,7 @@
 2. `random agent`: as the name shows, it does things randomly
 
 ### Results
-| Map | Traning steps| simon-a2c | random agent | DeepMind human |
+| Map | Traning eps | simon-a2c | random agent | DeepMind human |
 | --- | --- | --- | --- | --- |
 | (mean) DefeatRoaches | 1000 | 5.74 | -4 | 41 |
 | ( max ) DefeatRoaches | 1000 | 61 | 11 | 81 |
