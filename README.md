@@ -6,13 +6,18 @@
 1. `refs/pysc2-rl-agents`: A2C method referenced from [simonmeister's repo](https://github.com/simonmeister/pysc2-rl-agents), abbreviation as `simon-a2c`
 
 ### Results
-| Map | `simon-a2c` | random agent | DeepMind human |
-| --- | --- | --- | --- |
-| DefeatRoaches | N/A | mean -4 (max 11) | mean 41(max 81) |
-| DefeatZerglingsAndBanelings | N/A |mean 18.1 (max 72) | mean 729(max 757) |
-| MoveToBeacon | N/A | mean 1.2 (max 3) | mean 26(max 28) |
-| CollectMineralShards | N/A | mean 18.5 (max 32) | mean 133(max 142) |
-| FindAndDefeatZerglings | N/A | N/A | mean 46(max 49) |
+| Map | Traning steps|`simon-a2c` | random agent | DeepMind human |
+| --- | --- | --- | --- | --- |
+| (mean) DefeatRoaches | N/A | N/A | -4 | 41 |
+| ( max ) DefeatRoaches | N/A | N/A | 11 | 81 |
+| (mean) DefeatZerglingsAndBanelings | N/A | N/A | 18.1  |  729 |
+| ( max ) DefeatZerglingsAndBanelings | N/A | N/A |72| 757 |
+| (mean) MoveToBeacon | 5000 | 25.26 | 1.2 | 26 |
+| ( max ) MoveToBeacon | Same | 30.00 | 3 | 28 |
+| (mean) CollectMineralShards | N/A | N/A | 18.5 | 133 |
+| ( max ) CollectMineralShards | N/A | N/A | 32 | 142 |
+| (mean) FindAndDefeatZerglings | N/A | N/A | N/A | 46 |
+| ( max ) FindAndDefeatZerglings | N/A | N/A | N/A | 49 |
 
 ## Running
 ### Instruction
