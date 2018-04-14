@@ -7,13 +7,13 @@
 2. `random agent`: as the name shows, it does things randomly
 
 ### Results
-| Map | Traning iters | simon-a2c | random agent | DeepMind human |
+| Map | Training iters | simon-a2c | random agent | DeepMind human |
 | --- | --- | --- | --- | --- |
 | (mean) DefeatRoaches | 1000 | 5.74 | -4 | 41 |
 | ( max ) DefeatRoaches | 1000 | 61 | 11 | 81 |
 | (mean) DefeatZerglingsAndBanelings | N/A | N/A | 18.1  |  729 |
 | ( max ) DefeatZerglingsAndBanelings | N/A | N/A |72| 757 |
-| (mean) MoveToBeacon | 5000 | 25.26 | 1.2 | 26 |
+| (mean) MoveToBeacon | 5000*6 | 25.26 | 1.2 | 26 |
 | ( max ) MoveToBeacon | Same | 30.00 | 3 | 28 |
 | (mean) CollectMineralShards | N/A | N/A | 18.5 | 133 |
 | ( max ) CollectMineralShards | N/A | N/A | 32 | 142 |
