@@ -17,8 +17,8 @@
 | ( max ) MoveToBeacon | Same | 30.00 | 3 | 28 |
 | (mean) CollectMineralShards | N/A | N/A | 18.5 | 133 |
 | ( max ) CollectMineralShards | N/A | N/A | 32 | 142 |
-| (mean) FindAndDefeatZerglings | 500×8 = 4k | N/A | N/A | 46 |
-| ( max ) FindAndDefeatZerglings | Same | N/A | N/A | 49 |
+| (mean) FindAndDefeatZerglings | 500×8 = 4k | 4.82 | N/A | 46 |
+| ( max ) FindAndDefeatZerglings | Same | 18 | N/A | 49 |
 
 ## Running
 ### Instruction
