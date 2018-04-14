@@ -8,10 +8,10 @@
 ### Results
 | Map | `simon-a2c` | random agent | DeepMind human |
 | --- | --- | --- | --- |
-| DefeatRoaches | N/A | N/A | mean 41(max 81) |
-| DefeatZerglingsAndBanelings | N/A | N/A | mean 729(max 757) |
-| MoveToBeacon | N/A | N/A | mean 26(max 28) |
-| CollectMineralShards | N/A | N/A | mean 133(max 142) |
+| DefeatRoaches | N/A | mean -4 (max 11) | mean 41(max 81) |
+| DefeatZerglingsAndBanelings | N/A |mean 18.1 (max 72) | mean 729(max 757) |
+| MoveToBeacon | N/A | mean 1.2 (max 3) | mean 26(max 28) |
+| CollectMineralShards | N/A | mean 18.5 (max 32) | mean 133(max 142) |
 | FindAndDefeatZerglings | N/A | N/A | mean 46(max 49) |
 
 ## Prepare
