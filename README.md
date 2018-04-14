@@ -8,16 +8,16 @@
 ### Results
 | Map | Traning steps|`simon-a2c` | random agent | DeepMind human |
 | --- | --- | --- | --- | --- |
-| DefeatRoaches | N/A | N/A | -4 | 41 |
-| DefeatRoaches (max) | N/A | N/A | 11 | 81 |
-| DefeatZerglingsAndBanelings | N/A | N/A | 18.1  |  729 |
-| DefeatZerglingsAndBanelings (max) | N/A | N/A |72| 757 |
-| MoveToBeacon | 5000 | 25.26 | 1.2 | 26 |
-| MoveToBeacon (max) | Same | 30.00 | 3 | 28 |
-| CollectMineralShards | N/A | N/A | 18.5 | 133 |
-| CollectMineralShards (max) | N/A | N/A | 32 | 142 |
-| FindAndDefeatZerglings | N/A | N/A | N/A | 46 |
-| FindAndDefeatZerglings (max) | N/A | N/A | N/A | 49 |
+| (mean) DefeatRoaches | N/A | N/A | -4 | 41 |
+| ( max ) DefeatRoaches | N/A | N/A | 11 | 81 |
+| (mean) DefeatZerglingsAndBanelings | N/A | N/A | 18.1  |  729 |
+| ( max ) DefeatZerglingsAndBanelings | N/A | N/A |72| 757 |
+| (mean) MoveToBeacon | 5000 | 25.26 | 1.2 | 26 |
+| ( max ) MoveToBeacon | Same | 30.00 | 3 | 28 |
+| (mean) CollectMineralShards | N/A | N/A | 18.5 | 133 |
+| ( max ) CollectMineralShards | N/A | N/A | 32 | 142 |
+| (mean) FindAndDefeatZerglings | N/A | N/A | N/A | 46 |
+| ( max ) FindAndDefeatZerglings | N/A | N/A | N/A | 49 |
 
 ## Running
 ### Instruction
