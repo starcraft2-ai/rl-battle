@@ -14,6 +14,13 @@
 | CollectMineralShards | N/A | N/A | mean 133(max 142) |
 | FindAndDefeatZerglings | N/A | N/A | mean 46(max 49) |
 
+## Running
+### Instruction
+Run `MoveToBeacon` map with random agent
+```shell
+python -m run --map MoveToBeacon --agent refs.random.random_agent.RandomAgent
+```
+
 ## Prepare
 
 #### Python environment
