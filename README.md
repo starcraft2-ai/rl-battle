@@ -9,11 +9,11 @@
 ### Results
 | Map | Training iters | simon-a2c | random agent | DeepMind human |
 | --- | --- | --- | --- | --- |
-| (mean) DefeatRoaches | 1000*16 | 5.74 | -4 | 41 |
-| ( max ) DefeatRoaches | 1000*16 | 61 | 11 | 81 |
-| (mean) DefeatZerglingsAndBanelings | 500*8 | 24.8 | 18.1  |  729 |
-| ( max ) DefeatZerglingsAndBanelings | 500*8 | 108 |72| 757 |
-| (mean) MoveToBeacon | 5000*6 | 25.26 | 1.2 | 26 |
+| (mean) DefeatRoaches | 1000×16 = 16k | 5.74 | -4 | 41 |
+| ( max ) DefeatRoaches | Same | 61 | 11 | 81 |
+| (mean) DefeatZerglingsAndBanelings | 500×8 = 4k | 24.8 | 18.1  |  729 |
+| ( max ) DefeatZerglingsAndBanelings | Same | 108 |72| 757 |
+| (mean) MoveToBeacon | 5000×6 = 30k | 25.26 | 1.2 | 26 |
 | ( max ) MoveToBeacon | Same | 30.00 | 3 | 28 |
 | (mean) CollectMineralShards | N/A | N/A | 18.5 | 133 |
 | ( max ) CollectMineralShards | N/A | N/A | 32 | 142 |
