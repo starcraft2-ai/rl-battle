@@ -2,11 +2,12 @@
 
 ## Benchmarks
 
-### Repository Introduction
-1. `refs/pysc2-rl-agents`: A2C method referenced from [simonmeister's repo](https://github.com/simonmeister/pysc2-rl-agents), abbreviation as `simon-a2c`
+### Benchmark Introduction
+1. `simon-a2c`: A2C method referenced from [a fork of simonmeister's repo](https://github.com/starcraft2-ai/simon-a2c), abbreviation as `simon-a2c`
+2. `random agent`: as the name shows, it does things randomly
 
 ### Results
-| Map | Traning steps|`simon-a2c` | random agent | DeepMind human |
+| Map | Traning steps| simon-a2c | random agent | DeepMind human |
 | --- | --- | --- | --- | --- |
 | (mean) DefeatRoaches | 1000 | 5.74 | -4 | 41 |
 | ( max ) DefeatRoaches | 1000 | 61 | 11 | 81 |
