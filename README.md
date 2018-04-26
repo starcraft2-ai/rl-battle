@@ -24,7 +24,7 @@
 ### Instruction
 Run `MoveToBeacon` map with random agent
 ```shell
-python -m run --map MoveToBeacon --agent refs.random.random_agent.RandomAgent
+python -m run --map MoveToBeacon --agent agents.random.random_agent.RandomAgent
 ```
 
 ## Prepare
