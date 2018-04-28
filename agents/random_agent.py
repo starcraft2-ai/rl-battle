@@ -9,17 +9,12 @@ import sys
 from pysc2.agents import base_agent
 from pysc2.lib import actions
 
-FLAGS = flags.FLAGS
-
-print('Max steps:{max_step}'.format(
-    max_step=FLAGS.max_agent_steps), file=sys.stderr)
-
-
 class RandomAgent(base_agent.BaseAgent):
 
-    def __init__(self):
+    def __init__(self, max_steps = 2500):
         super(RandomAgent, self).__init__()
         self.rewards = [0]
+        self.max_steps = max_steps
 
     """A random agent for starcraft."""
 
@@ -30,7 +25,7 @@ class RandomAgent(base_agent.BaseAgent):
             print('episode:{episode}, step:{step}, reward:{reward}'.format(
                 episode=self.episodes, step=self.steps, reward=self.rewards[-1]), file=sys.stderr)
             self.rewards.append(0)
-        if self.steps == FLAGS.max_agent_steps:
+        if self.steps == self.max_steps:
             print('rewards:', self.rewards)
             print('mean:', sum(self.rewards) / len(self.rewards))
             print('max:', max(self.rewards))
