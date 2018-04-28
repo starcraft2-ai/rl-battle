@@ -4,7 +4,7 @@ tf.enable_eager_execution()
 
 CommonState = List[float]
 AgentState = List[float]
-GameState = Tuple[CommonState,AgentState]
+GameState = Tuple[CommonState, AgentState]
 Coordinates = Tuple[float, float]
 ActionProbablity = List[float]
 ActionTable = List[ActionProbablity]
@@ -13,15 +13,16 @@ Transition = Tuple[GameState, Actions, GameState]
 
 import random
 
+
 class Buffer:
-    def __init__(self, size = 2500):
+    def __init__(self, size=2500):
         """
         dequeued when filled with size
         """
         self.max_size = size
-        self.queue : List[Transition] = []
+        self.queue: List[Transition] = []
 
-    def add(self, transiton : Transition):
+    def add(self, transiton: Transition):
         if len(self.queue) >= self.max_size:
             self.queue.pop(0)
         self.queue.append(transiton)
@@ -31,6 +32,7 @@ class Buffer:
         Fetch random size 
         """
         return random.sample(self.queue, size)
+
 
 def best_actions(action_table: ActionTable) -> Actions:
     return [tf.argmax(action_probablity) for action_probablity in action_table]

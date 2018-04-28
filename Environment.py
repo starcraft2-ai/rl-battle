@@ -2,6 +2,8 @@ import pysc2
 from utils import GameState
 
 # TODO
+
+
 class BicNetAgent(pysc2.agents.base_agent.BaseAgent):
 
     def __init__(self):
@@ -9,7 +11,7 @@ class BicNetAgent(pysc2.agents.base_agent.BaseAgent):
         init instance
         '''
         super(BicNetAgent, self).__init__()
-    
+
     def step(self, obs):
         '''
         input: obs
@@ -18,6 +20,8 @@ class BicNetAgent(pysc2.agents.base_agent.BaseAgent):
         pass
 
 # TODO
+
+
 class Environment:
 
     def __init__(self, screen_size, minimap_size):
@@ -51,7 +55,7 @@ class Environment:
         transit from current state to next using action
         '''
         pass
-    
+
     def get_reward(self):
         '''
         get the reward of last action
