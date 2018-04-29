@@ -1,81 +1,76 @@
-from typing import Tuple, List
-
 import tensorflow as tf
-import tensorflow.contrib.layers as layers
 import tensorflow.contrib.eager as tfe
 
-def build_atari(minimap, screen, info, msize: int, ssize: int, num_action: int):
-    # Extract features
-    mconv1 = layers.conv2d(tf.transpose(minimap, [0, 2, 3, 1]),
-                           num_outputs=16,
-                           kernel_size=8,
-                           stride=4,
-                           scope='mconv1')
-    mconv2 = layers.conv2d(mconv1,
-                           num_outputs=32,
-                           kernel_size=4,
-                           stride=2,
-                           scope='mconv2')
-    sconv1 = layers.conv2d(tf.transpose(screen, [0, 2, 3, 1]),
-                           num_outputs=16,
-                           kernel_size=8,
-                           stride=4,
-                           scope='sconv1')
-    sconv2 = layers.conv2d(sconv1,
-                           num_outputs=32,
-                           kernel_size=4,
-                           stride=2,
-                           scope='sconv2')
-    info_fc = layers.fully_connected(layers.flatten(info),
-                                     num_outputs=256,
-                                     activation_fn=tf.tanh,
-                                     scope='info_fc')
+class AtariModel(tf.keras.Model):
+  def __init__(self, ssize, msize, num_action):
+    super(AtariModel, self).__init__()
+    self.ssize = ssize
+    self.msize = msize
+    self.num_action = num_action
 
-    # Compute spatial actions, non spatial actions and value
-    feat_fc = tf.concat(
-        [layers.flatten(mconv2), layers.flatten(sconv2), info_fc], axis=1)
-    feat_fc = layers.fully_connected(feat_fc,
-                                     num_outputs=256,
-                                     activation_fn=tf.nn.relu,
-                                     scope='feat_fc')
+    self.mconv1 = tf.keras.layers.Conv2D(filters=16, kernel_size=8, strides=4)
+    self.mconv2 = tf.keras.layers.Conv2D(filters=32, kernel_size=4, strides=2)
+    self.mconv_flatten = tf.keras.layers.Flatten()
+    self.sconv1 = tf.keras.layers.Conv2D(filters=16, kernel_size=8, strides=4)
+    self.sconv2 = tf.keras.layers.Conv2D(filters=32, kernel_size=4, strides=2)
+    self.sconv_flatten = tf.keras.layers.Flatten()
+    self.info_flatten = tf.keras.layers.Flatten()
+    self.info_fc = tf.keras.layers.Dense(units=256, activation=tf.nn.tanh)
+    self.feat_fc = tf.keras.layers.Dense(units=256, activation=tf.nn.relu)
+    self.spatial_action_x = tf.keras.layers.Dense(units=ssize, activation=tf.nn.softmax)
+    self.spatial_action_y = tf.keras.layers.Dense(units=ssize, activation=tf.nn.softmax)
+    self.spatial_action_flatten = tf.keras.layers.Flatten()
+    self.non_spatial_action = tf.keras.layers.Dense(units=num_action, activation=tf.nn.softmax)
+    self.value_fc = tf.keras.layers.Dense(units=1, activation=None)
 
-    spatial_action_x = layers.fully_connected(feat_fc,
-                                              num_outputs=ssize,
-                                              activation_fn=tf.nn.softmax,
-                                              scope='spatial_action_x')
-    spatial_action_y = layers.fully_connected(feat_fc,
-                                              num_outputs=ssize,
-                                              activation_fn=tf.nn.softmax,
-                                              scope='spatial_action_y')
-    spatial_action_x = tf.reshape(spatial_action_x, [-1, 1, ssize])
-    spatial_action_x = tf.tile(spatial_action_x, [1, ssize, 1])
-    spatial_action_y = tf.reshape(spatial_action_y, [-1, ssize, 1])
-    spatial_action_y = tf.tile(spatial_action_y, [1, 1, ssize])
-    spatial_action = layers.flatten(spatial_action_x * spatial_action_y)
+  def call(self, inputs):
+    # extract inputs
+    minimap, screen, info = inputs
 
-    non_spatial_action = layers.fully_connected(feat_fc,
-                                                num_outputs=num_action,
-                                                activation_fn=tf.nn.softmax,
-                                                scope='non_spatial_action')
-    value = tf.reshape(layers.fully_connected(feat_fc,
-                                              num_outputs=1,
-                                              activation_fn=None,
-                                              scope='value'), [-1])
+    # handle minimap conv layer
+    minimap = tf.transpose(minimap, [0, 2, 3, 1])
+    mconv = self.mconv1(minimap)
+    mconv = self.mconv2(mconv)
 
+    # handle screen conv layer
+    screen = tf.transpose(screen, [0, 2, 3, 1])
+    sconv = self.sconv1(screen)
+    sconv = self.sconv2(sconv)
+
+    # handle information -  available actions
+    info = self.info_flatten(info)
+    info_fc = self.info_fc(info)
+
+    # concatenate and connect to a fc layer
+    feat_fc = tf.concat([self.mconv_flatten(mconv), self.sconv_flatten(sconv), info_fc], axis=1)
+    feat_fc = self.feat_fc(feat_fc)
+
+    # generate spatial information
+    spatial_action_x, spatial_action_y = self.spatial_action_x(feat_fc), self.spatial_action_y(feat_fc)
+    spatial_action_x = tf.reshape(spatial_action_x, [-1, 1, self.ssize])
+    spatial_action_x = tf.tile(spatial_action_x, [1, self.ssize, 1])
+    spatial_action_y = tf.reshape(spatial_action_y, [-1, self.ssize, 1])
+    spatial_action_y = tf.tile(spatial_action_y, [1, 1, self.ssize])
+    spatial_action = self.spatial_action_flatten(spatial_action_x * spatial_action_y)
+
+    # generate non-spatial information - the action to be taken
+    non_spatial_action = self.non_spatial_action(feat_fc)
+
+    # generate the value
+    value = self.value_fc(feat_fc)
+    value = tf.reshape(value, [-1])
     return spatial_action, non_spatial_action, value
 
-class AtariModel(tf.keras.Model):
-#   def __init__(self):
-#     super(Model, self).__init__()
-#     self.W = tfe.Variable(5., name='weight')
-#     self.B = tfe.Variable(10., name='bias')
   def predict(self, inputs):
-    minimap, screen, info, msize, ssize, num_action = inputs
-    return build_atari(minimap, screen, info, msize, ssize, num_action)
+    return self.call(inputs)
 
 if __name__=='__main__':
     tf.enable_eager_execution()
-    model = AtariModel()
-    inputs = tf.zeros([8,8,64,64]), tf.zeros([8,8,64,64]), tf.zeros([8, 10]), 64, 64, 10
+    ssize, msize = 64, 64
+    num_action = 10
+    batch_size = 8
+    schannel, mchannel = 8, 8
+    model = AtariModel(ssize=ssize, msize=msize, num_action=num_action)
+    inputs = tf.zeros([batch_size,mchannel,msize,msize]), tf.zeros([batch_size,schannel,ssize,ssize]), tf.zeros([batch_size, num_action])
     print(model.predict(inputs))
-    # optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
