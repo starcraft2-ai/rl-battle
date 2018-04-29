@@ -1,12 +1,10 @@
 from typing import Tuple, List
 
-ModelOutput = Tuple()
-
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
+import tensorflow.contrib.eager as tfe
 
-
-def build_atari(minimap, screen, info, msize: int, ssize: int, num_action: int) -> ModelOutput:
+def build_atari(minimap, screen, info, msize: int, ssize: int, num_action: int):
     # Extract features
     mconv1 = layers.conv2d(tf.transpose(minimap, [0, 2, 3, 1]),
                            num_outputs=16,
@@ -65,3 +63,19 @@ def build_atari(minimap, screen, info, msize: int, ssize: int, num_action: int) 
                                               scope='value'), [-1])
 
     return spatial_action, non_spatial_action, value
+
+class AtariModel(tf.keras.Model):
+#   def __init__(self):
+#     super(Model, self).__init__()
+#     self.W = tfe.Variable(5., name='weight')
+#     self.B = tfe.Variable(10., name='bias')
+  def predict(self, inputs):
+    minimap, screen, info, msize, ssize, num_action = inputs
+    return build_atari(minimap, screen, info, msize, ssize, num_action)
+
+if __name__=='__main__':
+    tf.enable_eager_execution()
+    model = AtariModel()
+    inputs = tf.zeros([8,8,64,64]), tf.zeros([8,8,64,64]), tf.zeros([8, 10]), 64, 64, 10
+    print(model.predict(inputs))
+    # optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
