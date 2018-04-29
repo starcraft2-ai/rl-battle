@@ -59,6 +59,7 @@ def run_thread(agent_cls, map_name, visualize):
         env = available_actions_printer.AvailableActionsPrinter(env)
         agent = agent_cls()
         run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
+        stastic(agent.rewards)
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)
 
@@ -91,6 +92,14 @@ def main(unused_argv):
 def entry_point():  # Needed so setup.py scripts work.
     app.run(main)
 
+def stastic(scorearray):
+    avgscore=sum(scorearray)/len(scorearray)
+    maxscore=max(scorearray)
+    minscore=min(scorearray)
+    print('Scores:', scorearray, file=sys.stderr)
+    print('TotalEpisode:{episode}, AverageScore:{avg}, MaxScore:{max}'.format(
+            episode=len(scorearray), avg=avgscore, max=maxscore), file=sys.stderr)
+    return {'Eposide_num':len(scorearray),'Avgscore':avgscore,'Maxscore':maxscore,'Minscore':minscore}
 
 if __name__ == "__main__":
     app.run(main)
