@@ -22,13 +22,9 @@ class RandomAgent(base_agent.BaseAgent):
         super(RandomAgent, self).step(obs)
         self.rewards[-1] += obs.reward
         if obs.last():
-            print('episode:{episode}, step:{step}, reward:{reward}'.format(
-                episode=self.episodes, step=self.steps, reward=self.rewards[-1]), file=sys.stderr)
+            # print('episode:{episode}, step:{step}, reward:{reward}'.format(
+            #     episode=self.episodes, step=self.steps, reward=self.rewards[-1]), file=sys.stderr)
             self.rewards.append(0)
-        if self.steps == self.max_steps:
-            print('rewards:', self.rewards)
-            print('mean:', sum(self.rewards) / len(self.rewards))
-            print('max:', max(self.rewards))
         function_id = numpy.random.choice(obs.observation["available_actions"])
         args = [[numpy.random.randint(0, size) for size in arg.sizes]
                 for arg in self.action_spec.functions[function_id].args]
