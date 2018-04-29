@@ -12,8 +12,9 @@ from absl import app
 from absl import flags
 
 from agents.random_agent import RandomAgent
+from agents.atari_agent import AtariAgent
 
-all_agent_classes = ["RandomAgent"]
+all_agent_classes = ["RandomAgent", "AtariAgent"]
 
 FLAGS = flags.FLAGS
 flags.DEFINE_bool("render", True, "Whether to render with pygame.")
