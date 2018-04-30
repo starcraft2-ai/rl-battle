@@ -29,7 +29,7 @@ class AtariAgent(ModelAgent):
         (screen, minimap, info) = (
             tf.constant(obs.observation['screen'], tf.float32),
             tf.constant(obs.observation['minimap'], tf.float32),
-            np.zeros([possible_action_num])
+            np.zeros([possible_action_num], dtype=np.float32)
         )
         info[obs.observation['available_actions']] = 1
 
@@ -50,7 +50,7 @@ class AtariAgent(ModelAgent):
         value = value[0]
 
         # select available_actions
-        action_selected = tf.argmax(non_spatial_action * info[0])
+        action_selected = tf.argmax(non_spatial_action * info).numpy()
 
         # form action and call
         # TODO: better implementation
