@@ -1,5 +1,5 @@
 import os
-from pysc2.agents.base_agent import BaseAgent
+from agent.model_agent_protocal import ModelAgent
 from pysc2.lib import actions
 import tensorflow as tf
 from tensorflow.contrib import eager as tfe
@@ -10,7 +10,7 @@ from Networks.atari import AtariModel
 possible_action_num = len(actions.FUNCTIONS)
 
 
-class AtariAgent(BaseAgent):
+class AtariAgent(ModelAgent):
     def __init__(self, name='AtariAgent'):
         super().__init__()
         self.name = name

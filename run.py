@@ -11,8 +11,10 @@ from pysc2.lib import stopwatch
 from absl import app
 from absl import flags
 
-from agents.random_agent import RandomAgent
-from agents.atari_agent import AtariAgent
+from agent.random_agent import RandomAgent
+# All model agents
+from agent.model_agent_protocal import ModelAgent
+from agent.atari_agent import AtariAgent
 
 all_agent_classes = ["RandomAgent", "AtariAgent"]
 
@@ -58,6 +60,8 @@ def run_thread(agent_cls, map_name, visualize):
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
         agent = agent_cls()
+        if isinstance(agent, ModelAgent):
+            agent.build_model()
         run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
         stastic(agent.rewards)
         if FLAGS.save_replay:
@@ -92,14 +96,16 @@ def main(unused_argv):
 def entry_point():  # Needed so setup.py scripts work.
     app.run(main)
 
+
 def stastic(scorearray):
-    avgscore=sum(scorearray)/len(scorearray)
-    maxscore=max(scorearray)
-    minscore=min(scorearray)
+    avgscore = sum(scorearray)/len(scorearray)
+    maxscore = max(scorearray)
+    minscore = min(scorearray)
     print('Scores:', scorearray, file=sys.stderr)
     print('TotalEpisode:{episode}, AverageScore:{avg}, MaxScore:{max}'.format(
-            episode=len(scorearray), avg=avgscore, max=maxscore), file=sys.stderr)
-    return {'Eposide_num':len(scorearray),'Avgscore':avgscore,'Maxscore':maxscore,'Minscore':minscore}
+        episode=len(scorearray), avg=avgscore, max=maxscore), file=sys.stderr)
+    return {'Eposide_num': len(scorearray), 'Avgscore': avgscore, 'Maxscore': maxscore, 'Minscore': minscore}
+
 
 if __name__ == "__main__":
     app.run(main)
