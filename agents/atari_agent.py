@@ -27,7 +27,7 @@ class AtariAgent(BaseAgent):
         (screen, minimap, info) = (
             tfe.Variable(obs.observation['screen']),
             tfe.Variable(obs.observation['minimap']),
-            tfe.zeros([possible_action_num])
+            tf.zeros([possible_action_num])
         )
         info[obs.observation['available_actions']] = 1
 
