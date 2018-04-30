@@ -73,6 +73,6 @@ if __name__=='__main__':
     batch_size = 6
     schannel, mchannel = 8, 8
     model = AtariModel(ssize=ssize, msize=msize, num_action=num_action)
-    inputs = tf.random_normal([batch_size,mchannel,msize,msize]), tf.random_normal([batch_size,schannel,ssize,ssize]), tf.rand_normal([batch_size, num_action])
+    inputs = tf.random_normal([batch_size,mchannel,msize,msize]), tf.random_normal([batch_size,schannel,ssize,ssize]), tf.random_normal([batch_size, num_action])
     print(model.predict(inputs))
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
