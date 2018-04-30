@@ -1,5 +1,5 @@
 import sys
-import threading
+from multiprocessing.pool import ThreadPool
 
 
 from pysc2 import maps
@@ -66,6 +66,8 @@ def run_thread(agent_cls, map_name, visualize):
 
 def main(unused_argv):
     """Run an agent."""
+    pool = ThreadPool(processes=FLAGS.parallel)
+
     stopwatch.sw.enabled = FLAGS.profile or FLAGS.trace
     stopwatch.sw.trace = FLAGS.trace
 
@@ -73,17 +75,14 @@ def main(unused_argv):
 
     agent_cls = getattr(sys.modules[__name__], FLAGS.agent_name)
 
-    threads = []
-    for _ in range(FLAGS.parallel - 1):
-        t = threading.Thread(target=run_thread, args=(
-            agent_cls, FLAGS.map, False))
-        threads.append(t)
-        t.start()
+    async_results = [pool.apply_async(run_thread, (
+        agent_cls, FLAGS.map, False)) for which in range(FLAGS.parallel)]
 
-    run_thread(agent_cls, FLAGS.map, FLAGS.render)
+    # Can do anything here
 
-    for t in threads:
-        t.join()
+    return_vals = [r.get() for r in async_results]
+
+    # After all threads done
 
     if FLAGS.profile:
         print(stopwatch.sw)
@@ -92,14 +91,16 @@ def main(unused_argv):
 def entry_point():  # Needed so setup.py scripts work.
     app.run(main)
 
+
 def stastic(scorearray):
-    avgscore=sum(scorearray)/len(scorearray)
-    maxscore=max(scorearray)
-    minscore=min(scorearray)
+    avgscore = sum(scorearray)/len(scorearray)
+    maxscore = max(scorearray)
+    minscore = min(scorearray)
     print('Scores:', scorearray, file=sys.stderr)
     print('TotalEpisode:{episode}, AverageScore:{avg}, MaxScore:{max}'.format(
-            episode=len(scorearray), avg=avgscore, max=maxscore), file=sys.stderr)
-    return {'Eposide_num':len(scorearray),'Avgscore':avgscore,'Maxscore':maxscore,'Minscore':minscore}
+        episode=len(scorearray), avg=avgscore, max=maxscore), file=sys.stderr)
+    return {'Eposide_num': len(scorearray), 'Avgscore': avgscore, 'Maxscore': maxscore, 'Minscore': minscore}
+
 
 if __name__ == "__main__":
     app.run(main)
