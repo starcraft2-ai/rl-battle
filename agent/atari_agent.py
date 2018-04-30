@@ -3,6 +3,7 @@ from agent.model_agent_protocal import ModelAgent
 from pysc2.lib import actions
 import tensorflow as tf
 from tensorflow.contrib import eager as tfe
+import numpy as np
 tfe.enable_eager_execution()
 from Networks.atari import AtariModel
 
@@ -28,7 +29,7 @@ class AtariAgent(ModelAgent):
         (screen, minimap, info) = (
             obs.observation['screen'],
             obs.observation['minimap'],
-            tf.zeros([possible_action_num])
+            np.zeros([possible_action_num])
         )
         info[obs.observation['available_actions']] = 1
 
