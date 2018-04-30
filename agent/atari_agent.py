@@ -18,6 +18,7 @@ class AtariAgent(ModelAgent):
 
     def setup(self, obs_spec, action_spec):
         super().setup(obs_spec, action_spec)
+        self.build_model()
 
     def reset(self):
         super().reset()
@@ -25,8 +26,8 @@ class AtariAgent(ModelAgent):
     def step(self, obs):
         super().step(obs)
         (screen, minimap, info) = (
-            tfe.Variable(obs.observation['screen']),
-            tfe.Variable(obs.observation['minimap']),
+            obs.observation['screen'],
+            obs.observation['minimap'],
             tf.zeros([possible_action_num])
         )
         info[obs.observation['available_actions']] = 1

@@ -60,8 +60,6 @@ def run_thread(agent_cls, map_name, visualize):
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
         agent = agent_cls()
-        if isinstance(agent, ModelAgent):
-            agent.build_model()
         run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
         stastic(agent.rewards)
         if FLAGS.save_replay:
