@@ -1,4 +1,9 @@
 # Multi-Agent Reinforcement learning on StarCraft 2 
+Reinforcement Learning Agents implmented in Tensorflow, featuring morden eager execution.
+
+List of implemented Agents are:
+- Random Agent
+- Atari Agent (from deepmind minigame)
 
 ## Benchmarks
 See [this repo](https://github.com/starcraft2-ai/comparison)
