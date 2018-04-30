@@ -27,8 +27,8 @@ class AtariAgent(ModelAgent):
     def step(self, obs):
         super().step(obs)
         (screen, minimap, info) = (
-            obs.observation['screen'],
-            obs.observation['minimap'],
+            tf.constant(obs.observation['screen'], tf.float32),
+            tf.constant(obs.observation['minimap'], tf.float32),
             np.zeros([possible_action_num])
         )
         info[obs.observation['available_actions']] = 1
