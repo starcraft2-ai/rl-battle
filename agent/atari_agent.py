@@ -56,7 +56,7 @@ class AtariAgent(ModelAgent):
         # TODO: better implementation
         act_args = []
         for arg in actions.FUNCTIONS[action_selected].args:
-            if arg.name in ('screen', 'minimap'):
+            if arg.name in ('screen', 'minimap', 'screen2'):
                 act_args.append([x, y])
             else:
                 act_args.append([0])
