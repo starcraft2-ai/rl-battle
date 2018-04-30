@@ -53,12 +53,12 @@ class AtariAgent(BaseAgent):
         # form action and call
         # TODO: better implementation
         act_args = []
-        for arg in actions.FUNCTIONS[act_id].args:
+        for arg in actions.FUNCTIONS[action_selected].args:
             if arg.name in ('screen', 'minimap'):
-                act_args.append([target[1], target[0]])
+                act_args.append([x, y])
             else:
                 act_args.append([0])
-        return actions.FunctionCall(act_id, act_args)
+        return actions.FunctionCall(action_selected, act_args)
 
     def build_model(self, initializer=tf.zeros):
         self.model = AtariModel(
