@@ -52,6 +52,8 @@ class AtariModel(tf.keras.Model):
     spatial_action_y = tf.reshape(spatial_action_y, [-1, self.ssize, 1])
     spatial_action_y = tf.tile(spatial_action_y, [1, 1, self.ssize])
     spatial_action = self.spatial_action_flatten(spatial_action_x * spatial_action_y)
+    y, x = tf.argmax(spatial_action, 1) // self.ssize, tf.argmax(spatial_action, 1) % self.ssize
+    spatial_action = y, x
 
     # generate non-spatial information - the action to be taken
     non_spatial_action = self.non_spatial_action(feat_fc)
@@ -68,9 +70,9 @@ if __name__=='__main__':
     tf.enable_eager_execution()
     ssize, msize = 64, 64
     num_action = 10
-    batch_size = 8
+    batch_size = 6
     schannel, mchannel = 8, 8
     model = AtariModel(ssize=ssize, msize=msize, num_action=num_action)
-    inputs = tf.zeros([batch_size,mchannel,msize,msize]), tf.zeros([batch_size,schannel,ssize,ssize]), tf.zeros([batch_size, num_action])
+    inputs = tf.random_normal([batch_size,mchannel,msize,msize]), tf.random_normal([batch_size,schannel,ssize,ssize]), tf.rand_normal([batch_size, num_action])
     print(model.predict(inputs))
     optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.01)
