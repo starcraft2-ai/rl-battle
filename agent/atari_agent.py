@@ -16,6 +16,7 @@ class AtariAgent(ModelAgent):
         super().__init__()
         self.name = name
         self.model: AtariModel = None
+        self.rewards = [0]
 
     def setup(self, obs_spec, action_spec):
         super().setup(obs_spec, action_spec)
@@ -26,6 +27,9 @@ class AtariAgent(ModelAgent):
 
     def step(self, obs):
         super().step(obs)
+        self.rewards[-1] += obs.reward
+        if obs.last():
+            self.rewards.append(0)
         (screen, minimap, info) = (
             tf.constant(obs.observation['screen'], tf.float32),
             tf.constant(obs.observation['minimap'], tf.float32),
