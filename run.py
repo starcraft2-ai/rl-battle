@@ -1,4 +1,5 @@
 import sys
+from functools import reduce
 from multiprocessing import Pool
 
 
@@ -7,6 +8,7 @@ from pysc2.env import available_actions_printer
 from pysc2.env import run_loop
 from pysc2.env import sc2_env
 from pysc2.lib import stopwatch
+
 
 from absl import app
 from absl import flags
@@ -46,7 +48,7 @@ flags.DEFINE_string("map", None, "Name of a map to use.")
 flags.mark_flag_as_required("map")
 
 
-def run_thread(agent_cls, map_name, visualize):
+def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
     with sc2_env.SC2Env(
             map_name=map_name,
             agent_race=FLAGS.agent_race,
@@ -61,9 +63,11 @@ def run_thread(agent_cls, map_name, visualize):
         env = available_actions_printer.AvailableActionsPrinter(env)
         agent = agent_cls()
         run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
-        stastic(agent.rewards)
+        
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)
+
+        return agent.rewards
 
 
 def main(unused_argv):
@@ -84,6 +88,9 @@ def main(unused_argv):
 
     return_vals = [r.get() for r in async_results]
 
+    all_scores = reduce(list.__add__, return_vals)
+    print_stastic(all_scores)
+
     # After all threads done
 
     if FLAGS.profile:
@@ -94,13 +101,13 @@ def entry_point():  # Needed so setup.py scripts work.
     app.run(main)
 
 
-def stastic(scorearray):
+def print_stastic(scorearray):
     avgscore = sum(scorearray)/len(scorearray)
     maxscore = max(scorearray)
     minscore = min(scorearray)
     print('Scores:', scorearray, file=sys.stderr)
     print('TotalEpisode:{episode}, AverageScore:{avg}, MaxScore:{max}'.format(
-        episode=len(scorearray), avg=avgscore, max=maxscore), file=sys.stderr)
+        episode=len(scorearray), avg=round(avgscore,2), max=maxscore), file=sys.stderr)
     return {'Eposide_num': len(scorearray), 'Avgscore': avgscore, 'Maxscore': maxscore, 'Minscore': minscore}
 
 
