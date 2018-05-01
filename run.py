@@ -1,6 +1,6 @@
 import sys
 from multiprocessing.pool import ThreadPool
-
+import pymp
 
 from pysc2 import maps
 from pysc2.env import available_actions_printer
@@ -39,6 +39,7 @@ flags.DEFINE_enum("difficulty", None, sc2_env.difficulties.keys(),
 flags.DEFINE_bool("profile", False, "Whether to turn on code profiling.")
 flags.DEFINE_bool("trace", False, "Whether to trace the code execution.")
 flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
+flags.DEFINE_integer("process", 1, "How many instances to run in parallel on multiple CPUs. (requires openMP)")
 
 flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
 
@@ -68,7 +69,6 @@ def run_thread(agent_cls, map_name, visualize):
 
 def main(unused_argv):
     """Run an agent."""
-    pool = ThreadPool(processes=FLAGS.parallel)
 
     stopwatch.sw.enabled = FLAGS.profile or FLAGS.trace
     stopwatch.sw.trace = FLAGS.trace
@@ -77,12 +77,21 @@ def main(unused_argv):
 
     agent_cls = getattr(sys.modules[__name__], FLAGS.agent_name)
 
-    async_results = [pool.apply_async(run_thread, (
-        agent_cls, FLAGS.map, False)) for which in range(FLAGS.parallel)]
+    with pymp.Parallel(FLAGS.process) as p:
+        pools = [ThreadPool(processes=FLAGS.parallel) for _ in range(FLAGS.process)]
+        process_results = pymp.shared.array((FLAGS.process, FLAGS.parallel, ))
 
-    # Can do anything here
+        for pool, i in p.iterate(zip(pools, range(FLAGS.process))):
+            async_results = [pool.apply_async(run_thread, (
+                agent_cls, FLAGS.map, False)) for which in range(FLAGS.parallel)]
+        
+        
+            # Can do anything here
 
-    return_vals = [r.get() for r in async_results]
+            return_vals = [r.get() for r in async_results]
+            with p.lock:
+                process_results[i] = return_vals
+        
 
     # After all threads done
 
