@@ -1,5 +1,5 @@
 import sys
-from multiprocessing.pool import ThreadPool
+from multiprocessing import Pool
 
 
 from pysc2 import maps
@@ -68,7 +68,7 @@ def run_thread(agent_cls, map_name, visualize):
 
 def main(unused_argv):
     """Run an agent."""
-    pool = ThreadPool(processes=FLAGS.parallel)
+    pool = Pool(processes=FLAGS.parallel)
 
     stopwatch.sw.enabled = FLAGS.profile or FLAGS.trace
     stopwatch.sw.trace = FLAGS.trace
