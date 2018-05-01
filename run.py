@@ -107,7 +107,7 @@ def print_stastic(scorearray):
     minscore = min(scorearray)
     print('Scores:', scorearray, file=sys.stderr)
     print('TotalEpisode:{episode}, AverageScore:{avg}, MaxScore:{max}'.format(
-        episode=len(scorearray), avg=avgscore, max=maxscore), file=sys.stderr)
+        episode=len(scorearray), avg=round(avgscore,2), max=maxscore), file=sys.stderr)
     return {'Eposide_num': len(scorearray), 'Avgscore': avgscore, 'Maxscore': maxscore, 'Minscore': minscore}
 
 
