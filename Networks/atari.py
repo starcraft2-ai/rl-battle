@@ -14,18 +14,18 @@ class AtariModel(tf.keras.Model):
     self.sconv1 = tf.keras.layers.Conv2D(filters=16, kernel_size=8, strides=4)
     self.sconv2 = tf.keras.layers.Conv2D(filters=32, kernel_size=4, strides=2)
     self.sconv_flatten = tf.keras.layers.Flatten()
-    self.info_flatten = tf.keras.layers.Flatten()
-    self.info_fc = tf.keras.layers.Dense(units=256, activation=tf.nn.tanh)
+    self.aa_flatten = tf.keras.layers.Flatten()
+    self.aa_fc = tf.keras.layers.Dense(units=256, activation=tf.nn.tanh)
     self.feat_fc = tf.keras.layers.Dense(units=256, activation=tf.nn.relu)
-    self.spatial_action_x = tf.keras.layers.Dense(units=ssize, activation=tf.nn.softmax)
-    self.spatial_action_y = tf.keras.layers.Dense(units=ssize, activation=tf.nn.softmax)
-    self.spatial_action_flatten = tf.keras.layers.Flatten()
-    self.non_spatial_action = tf.keras.layers.Dense(units=num_action, activation=tf.nn.softmax)
+    self.x_fc = tf.keras.layers.Dense(units=ssize, activation=tf.nn.softmax)
+    self.y_fc = tf.keras.layers.Dense(units=ssize, activation=tf.nn.softmax)
+    self.coordinate_flatten = tf.keras.layers.Flatten()
+    self.action_fc = tf.keras.layers.Dense(units=num_action, activation=tf.nn.softmax)
     self.value_fc = tf.keras.layers.Dense(units=1, activation=None)
 
   def call(self, inputs):
     # extract inputs
-    minimap, screen, info = inputs
+    minimap, screen, available_actions = inputs
 
     # handle minimap conv layer
     minimap = tf.transpose(minimap, [0, 2, 3, 1])
@@ -38,30 +38,30 @@ class AtariModel(tf.keras.Model):
     sconv = self.sconv2(sconv)
 
     # handle information -  available actions
-    info = self.info_flatten(info)
-    info_fc = self.info_fc(info)
+    available_actions = self.aa_flatten(available_actions)
+    aa_fc = self.aa_fc(available_actions)
 
     # concatenate and connect to a fc layer
-    feat_fc = tf.concat([self.mconv_flatten(mconv), self.sconv_flatten(sconv), info_fc], axis=1)
+    feat_fc = tf.concat([self.mconv_flatten(mconv), self.sconv_flatten(sconv), aa_fc], axis=1)
     feat_fc = self.feat_fc(feat_fc)
 
     # generate spatial information
-    spatial_action_x, spatial_action_y = self.spatial_action_x(feat_fc), self.spatial_action_y(feat_fc)
-    spatial_action_x = tf.reshape(spatial_action_x, [-1, 1, self.ssize])
-    spatial_action_x = tf.tile(spatial_action_x, [1, self.ssize, 1])
-    spatial_action_y = tf.reshape(spatial_action_y, [-1, self.ssize, 1])
-    spatial_action_y = tf.tile(spatial_action_y, [1, 1, self.ssize])
-    spatial_action = self.spatial_action_flatten(spatial_action_x * spatial_action_y)
-    y, x = tf.argmax(spatial_action, 1) // self.ssize, tf.argmax(spatial_action, 1) % self.ssize
-    spatial_action = y, x
+    x_fc, y_fc = self.x_fc(feat_fc), self.y_fc(feat_fc)
+    x_fc = tf.reshape(x_fc, [-1, 1, self.ssize])
+    x_fc = tf.tile(x_fc, [1, self.ssize, 1])
+    y_fc = tf.reshape(y_fc, [-1, self.ssize, 1])
+    y_fc = tf.tile(y_fc, [1, 1, self.ssize])
+    coordinate = self.coordinate_flatten(x_fc * y_fc)
+    y, x = tf.argmax(coordinate, 1) // self.ssize, tf.argmax(coordinate, 1) % self.ssize
+    coordinate = y, x
 
-    # generate non-spatial information - the action to be taken
-    non_spatial_action = self.non_spatial_action(feat_fc)
+    # generate the action to be taken
+    action = self.action_fc(feat_fc)
 
     # generate the value
     value = self.value_fc(feat_fc)
     value = tf.reshape(value, [-1])
-    return spatial_action, non_spatial_action, value
+    return coordinate, action, value
 
   def predict(self, inputs):
     return self.call(inputs)
