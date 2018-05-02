@@ -36,20 +36,20 @@ def run_loop(agents, env, max_frames=0):
       for a in agents:
         a.reset()
       # special case: no frame should be done
-      if max_frames == 0:
-          return
+      #if max_frames == 0:
+      #    continue
       while True:
         total_frames += 1
         actions = [agent.step(timestep)
                    for agent, timestep in zip(agents, timesteps)]
-        last_timesteps = timesteps
-        timesteps = env.step(actions)
-        done = (max_frames and total_frames >= max_frames) or timesteps[0].last()
-        yield [last_timesteps[0], actions[0], timesteps[0]], done
         if max_frames and total_frames >= max_frames:
           return
         if timesteps[0].last():
           break
+        last_timesteps = timesteps      
+        done = (max_frames and total_frames >= max_frames) or timesteps[0].last()
+        #yield [last_timesteps[0], actions[0], timesteps[0]], done
+        timesteps = env.step(actions)
   except KeyboardInterrupt:
     pass
   finally:
