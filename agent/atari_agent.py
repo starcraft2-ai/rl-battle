@@ -65,7 +65,7 @@ class AtariAgent(ModelAgent):
                 act_args.append([x, y])
             else:
                 act_args.append([0])
-        return actions.FunctionCall(action_selected, act_args), value
+        return actions.FunctionCall(action_selected, act_args)
 
     def build_model(self, initializer=tf.zeros):
         self.model = AtariModel(

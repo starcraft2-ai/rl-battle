@@ -36,9 +36,15 @@ class Environment:
         '''
         transit from current state to next using action
         '''
+        # take long CPU time
         action = agent.step(observation)
+        # 
         reward = observation.reward
         state = observation.observation
+
+
+
+
 
         return action
 
