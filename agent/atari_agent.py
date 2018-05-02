@@ -30,31 +30,31 @@ class AtariAgent(ModelAgent):
         self.rewards[-1] += obs.reward
         if obs.last():
             self.rewards.append(0)
-        (screen, minimap, info) = (
+        (screen, minimap, available_actions) = (
             tf.constant(obs.observation['screen'], tf.float32),
             tf.constant(obs.observation['minimap'], tf.float32),
             np.zeros([possible_action_num], dtype=np.float32)
         )
-        info[obs.observation['available_actions']] = 1
+        available_actions[obs.observation['available_actions']] = 1
 
         # induce dimension
         x = (
             tf.expand_dims(minimap, 0),
             tf.expand_dims(screen, 0),
-            tf.expand_dims(info, 0)
+            tf.expand_dims(available_actions, 0)
         )
 
         # predict
-        (spatial_action, non_spatial_action, value) = self.model.predict(x)
+        (coordinate, action, value) = self.model.predict(x)
 
         # reduce dimentsion
-        y, x = spatial_action
+        y, x = coordinate
         y, x = y[0], x[0]
-        non_spatial_action = non_spatial_action[0]
+        action = action[0]
         value = value[0]
 
         # select available_actions
-        action_selected = tf.argmax(non_spatial_action * info).numpy()
+        action_selected = tf.argmax(action * available_actions).numpy()
 
         # form action and call
         # TODO: better implementation
