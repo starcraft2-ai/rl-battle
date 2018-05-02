@@ -17,7 +17,7 @@ from absl import flags
 from agent.model_agent_protocal import ModelAgent
 from agent.atari_agent import AtariAgent
 
-from Environment import Environment
+from Environment import A2CEnvironment
 
 all_agent_classes = ["AtariAgent"]
 
@@ -28,8 +28,9 @@ flags.DEFINE_integer("screen_resolution", 84,
 flags.DEFINE_integer("minimap_resolution", 64,
                      "Resolution for minimap feature layers.")
 
-flags.DEFINE_integer("max_agent_steps", 2500, "Total agent steps.")
-flags.DEFINE_integer("game_steps_per_episode", 0, "Game steps per episode.")
+flags.DEFINE_integer("game_steps_per_episode", 2500, "Game steps per episode.")
+flags.DEFINE_integer("max_agent_steps", FLAGS.game_steps_per_episode * 100, "Total agent steps.")
+
 flags.DEFINE_integer("step_mul", 8, "Game steps per agent step.")
 
 flags.DEFINE_string("agent_name", "RandomAgent",
@@ -48,9 +49,13 @@ flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
 flags.DEFINE_string("map", None, "Name of a map to use.")
 flags.mark_flag_as_required("map")
 
+# Multi Process things
 lock = Lock()
+agent_model = None
+replay_buffer = []
 
 def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
+    global lock, agent_model, replay_buffer
     with sc2_env.SC2Env(
             map_name=map_name,
             agent_race=FLAGS.agent_race,
@@ -63,18 +68,26 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
                              FLAGS.minimap_resolution),
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
-        agent_env = Environment(lock, )
-        run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
+        agent_env = A2CEnvironment(lock, agent_cls)
+
+        agent_env.set_replay_buffer(replay_buffer)
+        with lock:
+            if agent_model is None:
+                agent_model = agent_env.build_model()
+        agent_env.set_model(agent_model)
+
+
+        run_loop.run_loop([agent_env], env, FLAGS.max_agent_steps)
 
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)
 
-        return agent.reward
+        return agent_env
 
 
 def main(unused_argv):
     """Run an agent."""
-    pool = Pool(processes=FLAGS.parallel)
+    pool = Pool(processes=FLAGS.parallel, initargs=(lock, ))
 
     stopwatch.sw.enabled = FLAGS.profile or FLAGS.trace
     stopwatch.sw.trace = FLAGS.trace
@@ -88,9 +101,10 @@ def main(unused_argv):
 
     # Can do anything here
 
-    return_vals = [r.get() for r in async_results]
+    agent_envs = [r.get() for r in async_results]
 
-    last_scores = return_vals
+    last_scores = [env.agent.reward for env in agent_envs]
+
     print_stastic(last_scores)
 
     # After all threads done
