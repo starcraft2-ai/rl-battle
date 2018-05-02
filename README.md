@@ -12,7 +12,7 @@ See [this repo](https://github.com/starcraft2-ai/comparison)
 ### Benchmark
 Run `MoveToBeacon` map with random agent
 ```shell
-python run.py --map MoveToBeacon --agent RandomAgent
+python benchmark.py --map MoveToBeacon --agent RandomAgent
 ```
 
 ## Prepare
