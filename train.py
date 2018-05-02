@@ -1,6 +1,6 @@
 import sys
 from functools import reduce
-from multiprocessing import Pool
+from multiprocessing import Pool, Lock
 
 
 from pysc2 import maps
@@ -16,6 +16,8 @@ from absl import flags
 # All model agents
 from agent.model_agent_protocal import ModelAgent
 from agent.atari_agent import AtariAgent
+
+from Environment import Environment
 
 all_agent_classes = ["AtariAgent"]
 
@@ -46,6 +48,7 @@ flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
 flags.DEFINE_string("map", None, "Name of a map to use.")
 flags.mark_flag_as_required("map")
 
+lock = Lock()
 
 def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
     with sc2_env.SC2Env(
@@ -60,7 +63,7 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
                              FLAGS.minimap_resolution),
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
-        agent = agent_cls()
+        agent_env = Environment(lock, )
         run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
 
         if FLAGS.save_replay:

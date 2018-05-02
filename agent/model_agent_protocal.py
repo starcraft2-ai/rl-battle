@@ -8,6 +8,7 @@ class ModelAgent(object):
         self.steps = 0
         self.obs_spec = None
         self.action_spec = None
+        self.last_value = 0
 
     def setup(self, obs_spec, action_spec):
         self.obs_spec = obs_spec
@@ -22,10 +23,4 @@ class ModelAgent(object):
         return actions.FunctionCall(0, [])
 
     def build_model(self, initializer):
-        pass
-
-    def load_model(self, checkpoint_dir):
-        pass
-
-    def save_model(self, checkpoint_dir):
         pass

@@ -12,10 +12,10 @@ possible_action_num = len(actions.FUNCTIONS)
 
 
 class AtariAgent(ModelAgent):
-    def __init__(self, name='AtariAgent'):
+    def __init__(self, name='AtariAgent', model=None):
         super().__init__()
         self.name = name
-        self.model: AtariModel = None
+        self.model: AtariModel = model
         self.rewards = [0]
 
     def setup(self, obs_spec, action_spec):
@@ -56,6 +56,7 @@ class AtariAgent(ModelAgent):
         # select available_actions
         action_selected = tf.argmax(action * available_actions).numpy()
 
+        self.last_value = value
         # form action and call
         # TODO: better implementation
         act_args = []
@@ -64,21 +65,10 @@ class AtariAgent(ModelAgent):
                 act_args.append([x, y])
             else:
                 act_args.append([0])
-        return actions.FunctionCall(action_selected, act_args)
+        return actions.FunctionCall(action_selected, act_args), value
 
     def build_model(self, initializer=tf.zeros):
         self.model = AtariModel(
             self.obs_spec["screen"][0], self.obs_spec["minimap"][0], possible_action_num)
 
-        # TODO: Training
-        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-        self.root = tfe.Checkpoint(optimizer=optimizer,
-                                   model=self.model,
-                                   optimizer_step=tf.train.get_or_create_global_step())
-
-    def load_model(self, checkpoint_dir):
-        self.root.restore(tf.train.latest_checkpoint(checkpoint_dir))
-
-    def save_model(self, checkpoint_dir):
-        checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-        self.root.save(file_prefix=checkpoint_prefix)
+        return self.model
