@@ -6,6 +6,7 @@ from multiprocessing import Lock
 import tensorflow as tf
 from tensorflow.contrib import eager as tfe
 
+import random
 
 class Environment:
     def __init__(self, lock: Lock, agent_class: ModelAgent.__class__, model=None):
@@ -39,7 +40,7 @@ class Environment:
 
 
 class A2CEnvironment(Environment):
-    def __init__(self, lock: Lock, agent_class: ModelAgent.__class__, model=None):
+    def __init__(self, lock: Lock, agent_class: ModelAgent.__class__, model=None, M = 16):
         '''
         init environment instance
         '''
@@ -48,6 +49,10 @@ class A2CEnvironment(Environment):
         self.model = model
         self.agent.model = model
         self.replay_buffer = []
+        self.last_observation = None
+        self.last_action = None
+        self.last_value = None
+        self.M = M
 
     def setup(self, obs_spec, action_spec):
         '''
@@ -66,17 +71,29 @@ class A2CEnvironment(Environment):
     def step(self, observation):
         '''
         transit from current state to next using action
-        '''
+        ''' 
+
+        if self.last_observation is not None:
+            '''
+            Actor-Critic Algorithm Here
+            This is actaully transition for last round
+            because we are using passive mode of game environemnt for actions
+            '''
+            transition = (self.last_observation, self.last_action , observation, self.last_value)
+            self.replay_buffer.append(transition)
+            
+            # TODO: discover the possibliby of using batch on PySC2
+            # samples = random.sample(self.replay_buffer, self.M)
+
+
+        
         # take long CPU time
-        action = self.agent.step(observation)
-        #
-        reward = observation.reward
-        state = observation.observation
-        value = self.agent.last_value
+        result =  self.agent.step(observation)
 
-        loss = reward
-
-        return action
+        self.last_observation = observation
+        self.last_action      = self.agent.last_action
+        self.last_value       = self.agent.last_value
+        return result
 
     def set_replay_buffer(self, replay_buffer):
         '''

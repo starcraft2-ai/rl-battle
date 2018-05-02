@@ -56,7 +56,6 @@ class AtariAgent(ModelAgent):
         # select available_actions
         action_selected = tf.argmax(action * available_actions).numpy()
 
-        self.last_value = value
         # form action and call
         # TODO: better implementation
         act_args = []
@@ -65,6 +64,11 @@ class AtariAgent(ModelAgent):
                 act_args.append([x, y])
             else:
                 act_args.append([0])
+
+        # set value for public access or train use
+        self.last_value = value
+        self.last_action = (action_selected, act_args)
+
         return actions.FunctionCall(action_selected, act_args)
 
     def build_model(self, initializer=tf.zeros):
