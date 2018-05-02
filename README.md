@@ -1,5 +1,7 @@
 # Multi-Agent Reinforcement learning on StarCraft 2 
-Reinforcement Learning Agents implmented in Tensorflow, featuring morden eager execution.
+Reinforcement Learning Agents implmented in Tensorflow, featuring:
+- morden Eager Execution (human readable) structure
+- Mutiple CPU Support (HPC)
 
 List of implemented Agents are:
 - Random Agent
