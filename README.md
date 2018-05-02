@@ -6,7 +6,7 @@ List of implemented Agents are:
 - Atari Agent (from deepmind minigame)
 
 ## Benchmarks
-See [this repo](https://github.com/starcraft2-ai/comparison)
+See our [this repo](https://github.com/starcraft2-ai/comparison)
 
 ## Running
 ### Benchmark
