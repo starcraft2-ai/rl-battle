@@ -8,8 +8,38 @@ from tensorflow.contrib import eager as tfe
 
 
 class Environment:
+    def __init__(self, lock: Lock, agent_class: ModelAgent.__class__, model=None):
+        self.lock = lock
+        self.agent = agent_class()
+        self.model = model
+        self.agent.model = model
+        raise Exception(
+            "Should not instentiate Environment, use A2CEnvironment instead!")
 
-    def __init__(self, lock: Lock, model=None, agent_class: ModelAgent.__class__):
+    def setup(self, obs_spec, action_spec):
+        pass
+
+    def reset(self):
+        pass
+
+    def step(self, observation):
+        pass
+
+    def build_model(self):
+        pass
+
+    def set_model(self, model):
+        pass
+
+    def load_model(self, checkpoint_dir):
+        pass
+
+    def save_model(self, checkpoint_dir):
+        pass
+
+
+class A2CEnvironment(Environment):
+    def __init__(self, lock: Lock, agent_class: ModelAgent.__class__, model=None):
         '''
         init environment instance
         '''
@@ -17,6 +47,7 @@ class Environment:
         self.agent = agent_class()
         self.model = model
         self.agent.model = model
+        self.replay_buffer = []
 
     def setup(self, obs_spec, action_spec):
         '''
@@ -37,16 +68,21 @@ class Environment:
         transit from current state to next using action
         '''
         # take long CPU time
-        action = agent.step(observation)
-        # 
+        action = self.agent.step(observation)
+        #
         reward = observation.reward
         state = observation.observation
+        value = self.agent.last_value
 
-
-
-
+        loss = reward
 
         return action
+
+    def set_replay_buffer(self, replay_buffer):
+        '''
+        Use if you want to share replay buffer with other instences
+        '''
+        self.replay_buffer = replay_buffer
 
     def build_model(self):
         '''
