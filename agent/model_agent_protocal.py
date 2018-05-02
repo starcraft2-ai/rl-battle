@@ -17,6 +17,9 @@ class ModelAgent(object):
     def reset(self):
         self.episodes += 1
 
+    def simulate(self, obs):
+        pass
+
     def step(self, obs):
         self.steps += 1
         self.reward += obs.reward

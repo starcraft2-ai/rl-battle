@@ -25,11 +25,7 @@ class AtariAgent(ModelAgent):
     def reset(self):
         super().reset()
 
-    def step(self, obs):
-        super().step(obs)
-        self.rewards[-1] += obs.reward
-        if obs.last():
-            self.rewards.append(0)
+    def simulate(self, obs):
         (screen, minimap, available_actions) = (
             tf.constant(obs.observation['screen'], tf.float32),
             tf.constant(obs.observation['minimap'], tf.float32),
@@ -46,6 +42,16 @@ class AtariAgent(ModelAgent):
 
         # predict
         (coordinate, action, value) = self.model.predict(x)
+        return (coordinate, action, value)
+
+    def step(self, obs):
+        super().step(obs)
+        self.rewards[-1] += obs.reward
+        if obs.last():
+            self.rewards.append(0)
+
+        # predict
+        (coordinate, action, value) = self.simulate(obs)
 
         # reduce dimentsion
         y, x = coordinate
