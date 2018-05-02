@@ -5,7 +5,7 @@ from multiprocessing import Pool
 
 from pysc2 import maps
 from pysc2.env import available_actions_printer
-from pysc2.env import run_loop
+import run_loop
 from pysc2.env import sc2_env
 from pysc2.lib import stopwatch
 
