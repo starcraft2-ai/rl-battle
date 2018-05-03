@@ -6,6 +6,7 @@ from tensorflow.contrib import eager as tfe
 import numpy as np
 tfe.enable_eager_execution()
 from Networks.atari import AtariModel
+import time
 
 
 possible_action_num = len(actions.FUNCTIONS)
@@ -50,7 +51,6 @@ class AtariAgent(ModelAgent):
         # reduce dimentsion
         temp = tf.argmax(coordinate, 1)[0]
         y, x = temp // self.obs_spec['screen'][0], temp % self.obs_spec['screen'][0]
-        #print('x:{x}, y:{y}'.format(x=x,y=y))
         action = action[0]
         value = value[0]
 
@@ -84,8 +84,7 @@ class AtariAgent(ModelAgent):
         checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
         self.root.save(file_prefix=checkpoint_prefix)
 
-    #TODO
-    def loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value):
+    def loss(self, coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value):
       # Compute log probability
       coordinate_prob = tf.reduce_sum(coordinate * selected_coordinate, axis=1)
       coordinate_log_prob = tf.log(tf.clip_by_value(coordinate_prob, 1e-10, 1.))
@@ -108,7 +107,7 @@ class AtariAgent(ModelAgent):
       return policy_loss + value_loss
 
     #TODO
-    def train_model(optimizer, dataset, step_counter, log_interval=None):
+    def train_model(self, optimizer, dataset, step_counter, log_interval=None):
       grads = opt.compute_gradients(loss)
       cliped_grad = []
       for grad, var in grads:
@@ -127,13 +126,13 @@ class AtariAgent(ModelAgent):
           # Record the operations used to compute the loss given the input,
           # so that the gradient of the loss with respect to the variables
           # can be computed.
-          with tf.GradientTape() as tape:
-            logits = model(images, training=True)
-            loss_value = loss(logits, labels)
+          with tfe.GradientTape() as tape:
+            logits = self.model(images, training=True)
+            loss_value = self.loss(logits, labels)
             tf.contrib.summary.scalar('loss', loss_value)
             tf.contrib.summary.scalar('accuracy', compute_accuracy(logits, labels))
-          grads = tape.gradient(loss_value, model.variables)
-          optimizer.apply_gradients(zip(grads, model.variables), global_step=step_counter)
+          grads = tape.gradient(loss_value, self.model.variables)
+          optimizer.apply_gradients(zip(grads, self.model.variables), global_step=step_counter)
           if log_interval and batch % log_interval == 0:
             rate = log_interval / (time.time() - start)
             print('Step #%d\tLoss: %.6f (%d steps/sec)' % (batch, loss_value, rate))
