@@ -52,8 +52,6 @@ class AtariModel(tf.keras.Model):
     y_fc = tf.reshape(y_fc, [-1, self.ssize, 1])
     y_fc = tf.tile(y_fc, [1, 1, self.ssize])
     coordinate = self.coordinate_flatten(x_fc * y_fc)
-    y, x = tf.argmax(coordinate, 1) // self.ssize, tf.argmax(coordinate, 1) % self.ssize
-    coordinate = y, x
 
     # generate the action to be taken
     action = self.action_fc(feat_fc)
