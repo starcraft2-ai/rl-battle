@@ -20,7 +20,7 @@ from __future__ import print_function
 import time
 
 
-def run_loop(agents, env, max_frames=0):
+def run_loop(agents, env, max_frames=0, training=False):
   """A run loop to have agents and an environment interact."""
   total_frames = 0
   start_time = time.time()
@@ -29,15 +29,15 @@ def run_loop(agents, env, max_frames=0):
   observation_spec = env.observation_spec()
   for agent in agents:
     agent.setup(observation_spec, action_spec)
-
+  if training and training is True:
+    transitions = []
   try:
     while True:
       timesteps = env.reset()
       for a in agents:
         a.reset()
-      # special case: no frame should be done
-      #if max_frames == 0:
-      #    continue
+      if training and training is True:
+        transitions.append([])
       while True:
         total_frames += 1
         actions = [agent.step(timestep)
@@ -46,13 +46,20 @@ def run_loop(agents, env, max_frames=0):
           return
         if timesteps[0].last():
           break
-        last_timesteps = timesteps      
-        done = (max_frames and total_frames >= max_frames) or timesteps[0].last()
-        #yield [last_timesteps[0], actions[0], timesteps[0]], done
-        timesteps = env.step(actions)
+        if training and training is True:
+                last_timesteps = timesteps
+                last_frame = (max_frames and total_frames >= max_frames) or timesteps[0].last()
+                timesteps = env.step(actions)
+                #TODO: why?
+                temp = [last_timesteps[0], actions[0], timesteps[0]], last_frame
+                transitions[-1].append(temp)
+        else:
+                timesteps = env.step(actions)
   except KeyboardInterrupt:
     pass
   finally:
     elapsed_time = time.time() - start_time
     print("Took %.3f seconds for %s steps: %.3f fps" % (
         elapsed_time, total_frames, total_frames / elapsed_time))
+    if training and training is True:
+        return transitions 

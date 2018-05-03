@@ -6,6 +6,7 @@ from multiprocessing import Pool
 from pysc2 import maps
 from pysc2.env import available_actions_printer
 import run_loop
+#from pysc2.env import run_loop
 from pysc2.env import sc2_env
 from pysc2.lib import stopwatch
 
@@ -62,7 +63,13 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
         agent = agent_cls()
-        run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
+        transitions = run_loop.run_loop([agent], env, FLAGS.max_agent_steps, training=True)
+        print('Episodes:',len(transitions))
+        total_transitions = 0
+        for i, transition in enumerate(transitions):
+                print('Episode {i}: {transition} transitions'.format(i=i, transition=len(transition)))
+                total_transitions += len(transition)
+        print('Transitions in total', total_transitions)
         
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)

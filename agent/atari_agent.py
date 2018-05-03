@@ -82,3 +82,33 @@ class AtariAgent(ModelAgent):
     def save_model(self, checkpoint_dir):
         checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
         self.root.save(file_prefix=checkpoint_prefix)
+
+    #TODO
+    def loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value):
+      # Compute log probability
+      coordinate_prob = tf.reduce_sum(coordinate * selected_coordinate, axis=1)
+      coordinate_log_prob = tf.log(tf.clip_by_value(coordinate_prob, 1e-10, 1.))
+      action_prob = tf.reduce_sum(action * selected_action, axis=1)
+      valid_action_prob = tf.reduce_sum(action * valid_action, axis=1)
+      valid_action_prob = tf.clip_by_value(valid_action_prob, 1e-10, 1.)
+      action_prob = action_prob / valid_action_prob
+      action_log_prob = tf.log(tf.clip_by_value(action_prob, 1e-10, 1.))
+      # TODO
+      # record action_prob and coordinate_prob
+      # self.summary.append(tf.summary.histogram('spatial_action_prob', spatial_action_prob))
+      # self.summary.append(tf.summary.histogram('non_spatial_action_prob', non_spatial_action_prob))
+
+      # Compute losses, more details in https://arxiv.org/abs/1602.01783
+      # Policy loss and value loss
+      action_log_prob = valid_coordinate * coordinate_log_prob + action_log_prob
+      error = tf.stop_gradient(target_value - value)
+      policy_loss = - tf.reduce_mean(action_log_prob * error)
+      value_loss = - tf.reduce_mean(self.value * error)
+      #TODO
+      # self.summary.append(tf.summary.scalar('policy_loss', policy_loss))
+      # self.summary.append(tf.summary.scalar('value_loss', value_loss))
+      return policy_loss + value_loss
+
+    #TODO
+    def train_model():
+      pass
