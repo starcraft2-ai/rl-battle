@@ -45,13 +45,13 @@ class AtariAgent(ModelAgent):
         )
 
         # predict
-        (coordinate, action, value) = self.model.predict(x)
+        (coordinates, actions, values) = self.model.predict(x)
 
         # reduce dimentsion
-        y, x = coordinate
-        y, x = y[0], x[0]
-        action = action[0]
-        value = value[0]
+        coordinate = coordinates[0]
+        y, x = tf.argmax(coordinate, 1) // self.ssize, tf.argmax(coordinate, 1) % self.ssize
+        action = actions[0]
+        value = values[0]
 
         # select available_actions
         action_selected = tf.argmax(action * available_actions).numpy()
