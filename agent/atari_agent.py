@@ -54,8 +54,9 @@ class AtariAgent(ModelAgent):
         (coordinate, action, value) = self.simulate(obs)
 
         # reduce dimentsion
-        y, x = coordinate
-        y, x = y[0], x[0]
+        temp = tf.argmax(coordinate, 1)[0]
+        y, x = temp // self.obs_spec['screen'][0], temp % self.obs_spec['screen'][0]
+        #print('x:{x}, y:{y}'.format(x=x,y=y))
         action = action[0]
         value = value[0]
 
