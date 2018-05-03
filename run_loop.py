@@ -50,9 +50,7 @@ def run_loop(agents, env, max_frames=0, training=False):
                 last_timesteps = timesteps
                 last_frame = (max_frames and total_frames >= max_frames) or timesteps[0].last()
                 timesteps = env.step(actions)
-                #TODO: why?
-                temp = [last_timesteps[0], actions[0], timesteps[0]], last_frame
-                transitions[-1].append(temp)
+                transitions[-1].append([last_timesteps[0], actions[0], timesteps[0]])
         else:
                 timesteps = env.step(actions)
   except KeyboardInterrupt:

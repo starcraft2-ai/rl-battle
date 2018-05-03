@@ -93,10 +93,6 @@ class AtariAgent(ModelAgent):
       valid_action_prob = tf.clip_by_value(valid_action_prob, 1e-10, 1.)
       action_prob = action_prob / valid_action_prob
       action_log_prob = tf.log(tf.clip_by_value(action_prob, 1e-10, 1.))
-      # TODO
-      # record action_prob and coordinate_prob
-      # self.summary.append(tf.summary.histogram('spatial_action_prob', spatial_action_prob))
-      # self.summary.append(tf.summary.histogram('non_spatial_action_prob', non_spatial_action_prob))
 
       # Compute losses, more details in https://arxiv.org/abs/1602.01783
       # Policy loss and value loss
@@ -104,11 +100,42 @@ class AtariAgent(ModelAgent):
       error = tf.stop_gradient(target_value - value)
       policy_loss = - tf.reduce_mean(action_log_prob * error)
       value_loss = - tf.reduce_mean(self.value * error)
-      #TODO
-      # self.summary.append(tf.summary.scalar('policy_loss', policy_loss))
-      # self.summary.append(tf.summary.scalar('value_loss', value_loss))
+
+      # record losses
+      tf.contrib.summary.scalar('policy_loss', policy_loss)
+      tf.contrib.summary.scalar('value_loss', value_loss)
       return policy_loss + value_loss
 
     #TODO
-    def train_model():
-      pass
+    def train_model(optimizer, dataset, step_counter, log_interval=None):
+      grads = opt.compute_gradients(loss)
+      cliped_grad = []
+      for grad, var in grads:
+        self.summary.append(tf.summary.histogram(var.op.name, var))
+        self.summary.append(tf.summary.histogram(var.op.name+'/grad', grad))
+        grad = tf.clip_by_norm(grad, 10.0)
+        cliped_grad.append([grad, var])
+      self.train_op = opt.apply_gradients(cliped_grad)
+      self.summary_op = tf.summary.merge(self.summary)
+
+      self.saver = tf.train.Saver(max_to_keep=100)
+      
+      start = time.time()
+      for (batch, []) in enumerate(tfe.Iterator(dataset)):
+        with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=step_counter):
+          # Record the operations used to compute the loss given the input,
+          # so that the gradient of the loss with respect to the variables
+          # can be computed.
+          with tf.GradientTape() as tape:
+            logits = model(images, training=True)
+            loss_value = loss(logits, labels)
+            tf.contrib.summary.scalar('loss', loss_value)
+            tf.contrib.summary.scalar('accuracy', compute_accuracy(logits, labels))
+          grads = tape.gradient(loss_value, model.variables)
+          optimizer.apply_gradients(zip(grads, model.variables), global_step=step_counter)
+          if log_interval and batch % log_interval == 0:
+            rate = log_interval / (time.time() - start)
+            print('Step #%d\tLoss: %.6f (%d steps/sec)' % (batch, loss_value, rate))
+            start = time.time()
+
+
