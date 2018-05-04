@@ -80,8 +80,8 @@ class AtariAgent(ModelAgent):
             self.obs_spec["screen"][0], self.obs_spec["minimap"][0], possible_action_num)
 
         # TODO: Training
-        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-        self.root = tfe.Checkpoint(optimizer=optimizer,
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        self.root = tfe.Checkpoint(optimizer=self.optimizer,
                                    model=self.model,
                                    optimizer_step=tf.train.get_or_create_global_step())
 
@@ -115,7 +115,7 @@ class AtariAgent(ModelAgent):
       return policy_loss + value_loss
 
     #TODO
-    def train_model(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
+    def _train(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
         # Compute R, which is value of the last observation
         obs = episode_rb[-1][-1]
         if obs.last():
@@ -141,7 +141,7 @@ class AtariAgent(ModelAgent):
         target_value[-1] = R
 
         valid_coordinate = np.zeros([len(episode_rb)], dtype=np.float32)
-        selected_coordinate = np.zeros([len(episode_rb), self.ssize**2], dtype=np.float32)
+        selected_coordinate = np.zeros([len(episode_rb), self.obs_spec["screen"][0]], dtype=np.float32)
         valid_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
         selected_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
 
@@ -174,27 +174,35 @@ class AtariAgent(ModelAgent):
         available_actions = tf.constant(available_actions, tf.float32)
       
         # real training part
-        start = time.time()
-        x = minimaps, screens, available_actions
-        with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=step_counter):
-            with tfe.GradientTape() as tape:
-                coordinate, action, value = self.model(x, training=True)
-                loss_value = self.loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value)
-                tf.contrib.summary.scalar('loss', loss_value)
-            grads = tape.gradient(loss_value, self.model.variables)
-            optimizer.apply_gradients(zip(grads, self.model.variables), global_step=step_counter)
-            if log_interval and step_counter % log_interval == 0:
-                rate = log_interval / (time.time() - start)
-                print('Step #%d\tLoss: %.6f (%d steps/sec)' % (step_counter, loss_value, rate))
+        # x = minimaps, screens, available_actions
+        # with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=step_counter):
+        #     with tfe.GradientTape() as tape:
+        #         coordinate, action, value = self.model(x, training=True)
+        #         loss_value = self.loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value)
+        #         tf.contrib.summary.scalar('loss', loss_value)
+        #     grads = tape.gradient(loss_value, self.model.variables)
+        #     optimizer.apply_gradients(zip(grads, self.model.variables), global_step=step_counter)
+    
+    def train_model(self, rb, model_dir, discount, train_dir):
+        # Create and restore checkpoint (if one exists on the path)
+        step_counter = tf.train.get_or_create_global_step()
 
-    #   grads = opt.compute_gradients(loss)
-    #   cliped_grad = []
-    #   for grad, var in grads:
-    #     self.summary.append(tf.summary.histogram(var.op.name, var))
-    #     self.summary.append(tf.summary.histogram(var.op.name+'/grad', grad))
-    #     grad = tf.clip_by_norm(grad, 10.0)
-    #     cliped_grad.append([grad, var])
-    #   self.train_op = opt.apply_gradients(cliped_grad)
-    #   self.summary_op = tf.summary.merge(self.summary)
+        # Create file writers for writing TensorBoard summaries.
+        summary_writer = tf.contrib.summary.create_file_writer(
+            train_dir, flush_millis=10000)
 
-    #   self.saver = tf.train.Saver(max_to_keep=100)
+        # Train
+        with tf.device('/gpu:0'):
+            # TODO: add training epochs
+            for episode_rb in rb:
+                print(type(episode_rb))
+                start = time.time()
+                with summary_writer.as_default():
+                    pass
+                    # self._train(self.optimizer, episode_rb, step_counter, discount)
+                end = time.time()
+                print('\nTrain time for episode #%d (%d total steps): %f' %
+                        (self.root.save_counter.numpy() + 1,
+                        step_counter.numpy(),
+                        end - start))
+                self.save_model(model_dir)

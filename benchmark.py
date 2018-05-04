@@ -65,14 +65,25 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
         env = available_actions_printer.AvailableActionsPrinter(env)
         agent = agent_cls()
         if FLAGS.train is True:
-            transitions = run_loop.run_loop([agent], env, FLAGS.max_agent_steps, training=True)
-            print('Episodes:',len(transitions))
+            rb = run_loop.run_loop([agent], env, FLAGS.max_agent_steps, training=True)
+            print('Episodes:',len(rb))
             total_transitions = 0
-            for i, transition in enumerate(transitions):
+            for i, transition in enumerate(rb):
                     print('Episode {i}: {transition} transitions'.format(i=i, transition=len(transition)))
                     total_transitions += len(transition)
             print('Transitions in total', total_transitions)
+
+            print('Test train')
+            # TODO: read all directories from outside
+            # TODO: modify discount or read discount from outside
+            discount = 0.9
+            model_dir = '.train-checkpoint'
+            train_dir = '.train-summary'
+            agent.train_model(rb, model_dir, discount, train_dir)
         else:
+            # TODO: load model
+            # if directory_exists(checkpoint_dir):
+            #     agent.load_model(checkpoint_dir)
             run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
         
         if FLAGS.save_replay:
