@@ -11,6 +11,14 @@ import time
 
 possible_action_num = len(actions.FUNCTIONS)
 
+def model_input(obs):
+    (screen, minimap, available_actions) = (
+        tf.constant(obs.observation['screen'], tf.float32),
+        tf.constant(obs.observation['minimap'], tf.float32),
+        np.zeros([possible_action_num], dtype=np.float32)
+    )
+    available_actions[obs.observation['available_actions']] = 1
+    return screen, minimap, available_actions
 
 class AtariAgent(ModelAgent):
     def __init__(self, name='AtariAgent'):
@@ -107,35 +115,87 @@ class AtariAgent(ModelAgent):
       return policy_loss + value_loss
 
     #TODO
-    def train_model(self, optimizer, dataset, step_counter, log_interval=None):
-      grads = opt.compute_gradients(loss)
-      cliped_grad = []
-      for grad, var in grads:
-        self.summary.append(tf.summary.histogram(var.op.name, var))
-        self.summary.append(tf.summary.histogram(var.op.name+'/grad', grad))
-        grad = tf.clip_by_norm(grad, 10.0)
-        cliped_grad.append([grad, var])
-      self.train_op = opt.apply_gradients(cliped_grad)
-      self.summary_op = tf.summary.merge(self.summary)
+    def train_model(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
+        # compute R
+        obs = episode_rb[-1][-1]
+        if obs.last():
+            R = 0
+        else:
+            minimap, screen, available_action = model_input(obs)
 
-      self.saver = tf.train.Saver(max_to_keep=100)
+            # induce dimension
+            x = (
+                tf.expand_dims(minimap, 0),
+                tf.expand_dims(screen, 0),
+                tf.expand_dims(available_action, 0)
+            )
+            # TODO: training=True or not?
+            _, _, R = self.model(x)
+
+        # Compute targets and masks
+        minimaps = []
+        screens = []
+        available_actions = []
+
+        target_value = np.zeros([len(episode_rb)], dtype=np.float32)
+        target_value[-1] = R
+
+        valid_coordinate = np.zeros([len(episode_rb)], dtype=np.float32)
+        selected_coordinate = np.zeros([len(episode_rb), self.ssize**2], dtype=np.float32)
+        valid_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
+        selected_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
+
+        episode_rb.reverse()
+        for i, [obs, action, _] in enumerate(episode_rb):
+            minimap, screen, available_action = model_input(obs)
+
+            minimaps.append(minimap)
+            screens.append(screen)
+            available_actions.append(available_action)
+
+            reward = obs.reward
+            act_id = action.function
+            act_args = action.arguments
+
+            target_value[i] = reward + discount * target_value[i-1]
+
+            valid_action[i, obs.observation["available_actions"]] = 1
+            selected_action[i, act_id] = 1
+
+            args = actions.FUNCTIONS[act_id].args
+            for arg, act_arg in zip(args, act_args):
+                if arg.name in ('screen', 'minimap', 'screen2'):
+                    ind = act_arg[1] * self.obs_spec["screen"][0] + act_arg[0]
+                    valid_coordinate[i] = 1
+                    selected_coordinate[i, ind] = 1
+
+        minimaps = tf.constant(minimaps, tf.float32)
+        screens = tf.constant(screens, tf.float32)
+        available_actions = tf.constant(available_actions, tf.float32)
       
-      start = time.time()
-      for (batch, []) in enumerate(tfe.Iterator(dataset)):
+        # real training part
+        start = time.time()
+        x = minimaps, screens, available_actions
         with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=step_counter):
-          # Record the operations used to compute the loss given the input,
-          # so that the gradient of the loss with respect to the variables
-          # can be computed.
-          with tfe.GradientTape() as tape:
-            logits = self.model(images, training=True)
-            loss_value = self.loss(logits, labels)
-            tf.contrib.summary.scalar('loss', loss_value)
-            tf.contrib.summary.scalar('accuracy', compute_accuracy(logits, labels))
-          grads = tape.gradient(loss_value, self.model.variables)
-          optimizer.apply_gradients(zip(grads, self.model.variables), global_step=step_counter)
-          if log_interval and batch % log_interval == 0:
-            rate = log_interval / (time.time() - start)
-            print('Step #%d\tLoss: %.6f (%d steps/sec)' % (batch, loss_value, rate))
-            start = time.time()
+            with tfe.GradientTape() as tape:
+                coordinate, action, value = self.model(x, training=True)
+                loss_value = self.loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value)
+                tf.contrib.summary.scalar('loss', loss_value)
+            grads = tape.gradient(loss_value, self.model.variables)
+            optimizer.apply_gradients(zip(grads, self.model.variables), global_step=step_counter)
+            if log_interval and step_counter % log_interval == 0:
+                rate = log_interval / (time.time() - start)
+                print('Step #%d\tLoss: %.6f (%d steps/sec)' % (step_counter, loss_value, rate))
 
+    #   grads = opt.compute_gradients(loss)
+    #   cliped_grad = []
+    #   for grad, var in grads:
+    #     self.summary.append(tf.summary.histogram(var.op.name, var))
+    #     self.summary.append(tf.summary.histogram(var.op.name+'/grad', grad))
+    #     grad = tf.clip_by_norm(grad, 10.0)
+    #     cliped_grad.append([grad, var])
+    #   self.train_op = opt.apply_gradients(cliped_grad)
+    #   self.summary_op = tf.summary.merge(self.summary)
 
+    #   self.saver = tf.train.Saver(max_to_keep=100)
+    # Compute R, which is value of the last observation
