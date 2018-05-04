@@ -64,7 +64,7 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
         agent = agent_cls()
-        if FLAGS.train:
+        if FLAGS.train is True:
             transitions = run_loop.run_loop([agent], env, FLAGS.max_agent_steps, training=True)
             print('Episodes:',len(transitions))
             total_transitions = 0

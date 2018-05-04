@@ -36,7 +36,6 @@ class AtariAgent(ModelAgent):
 
     def step(self, obs):
         super().step(obs)
-        print('in step')
         self.rewards[-1] += obs.reward
         if obs.last():
             self.rewards.append(0)
