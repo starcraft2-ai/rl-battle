@@ -36,6 +36,7 @@ class AtariAgent(ModelAgent):
 
     def step(self, obs):
         super().step(obs)
+        print('in step')
         self.rewards[-1] += obs.reward
         if obs.last():
             self.rewards.append(0)
@@ -116,7 +117,7 @@ class AtariAgent(ModelAgent):
 
     #TODO
     def train_model(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
-        # compute R
+        # Compute R, which is value of the last observation
         obs = episode_rb[-1][-1]
         if obs.last():
             R = 0
@@ -198,4 +199,3 @@ class AtariAgent(ModelAgent):
     #   self.summary_op = tf.summary.merge(self.summary)
 
     #   self.saver = tf.train.Saver(max_to_keep=100)
-    # Compute R, which is value of the last observation

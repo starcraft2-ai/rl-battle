@@ -41,6 +41,7 @@ flags.DEFINE_enum("difficulty", None, sc2_env.difficulties.keys(),
 
 flags.DEFINE_bool("profile", False, "Whether to turn on code profiling.")
 flags.DEFINE_bool("trace", False, "Whether to trace the code execution.")
+flags.DEFINE_bool("train", False, "Whether this is for training use.")
 flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 
 flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
@@ -63,13 +64,16 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
         agent = agent_cls()
-        transitions = run_loop.run_loop([agent], env, FLAGS.max_agent_steps, training=True)
-        print('Episodes:',len(transitions))
-        total_transitions = 0
-        for i, transition in enumerate(transitions):
-                print('Episode {i}: {transition} transitions'.format(i=i, transition=len(transition)))
-                total_transitions += len(transition)
-        print('Transitions in total', total_transitions)
+        if FLAGS.train:
+            transitions = run_loop.run_loop([agent], env, FLAGS.max_agent_steps, training=True)
+            print('Episodes:',len(transitions))
+            total_transitions = 0
+            for i, transition in enumerate(transitions):
+                    print('Episode {i}: {transition} transitions'.format(i=i, transition=len(transition)))
+                    total_transitions += len(transition)
+            print('Transitions in total', total_transitions)
+        else:
+            run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
         
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)
