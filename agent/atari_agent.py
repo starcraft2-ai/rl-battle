@@ -18,7 +18,7 @@ def model_input(obs):
         np.zeros([possible_action_num], dtype=np.float32)
     )
     available_actions[obs.observation['available_actions']] = 1
-    return screen, minimap, available_actions
+    return (screen, minimap, available_actions)
 
 class AtariAgent(ModelAgent):
     def __init__(self, name='AtariAgent'):
@@ -78,6 +78,8 @@ class AtariAgent(ModelAgent):
     def build_model(self, initializer=tf.zeros):
         self.model = AtariModel(
             self.obs_spec["screen"][0], self.obs_spec["minimap"][0], possible_action_num)
+        print('screen', self.obs_spec["screen"])
+        print('minimap', self.obs_spec["minimap"])
 
         # TODO: Training
         self.optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
@@ -117,67 +119,72 @@ class AtariAgent(ModelAgent):
     #TODO
     def _train(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
         # Compute R, which is value of the last observation
-        obs = episode_rb[-1][-1]
-        if obs.last():
+        if len(episode_rb[-1]) == 0:
             R = 0
         else:
-            minimap, screen, available_action = model_input(obs)
+            obs = episode_rb[-1][-1]
+            if obs.last():
+                R = 0
+            else:
+                (minimap, screen, available_action) = model_input(obs)
 
-            # induce dimension
-            x = (
-                tf.expand_dims(minimap, 0),
-                tf.expand_dims(screen, 0),
-                tf.expand_dims(available_action, 0)
-            )
-            # TODO: training=True or not?
-            _, _, R = self.model(x)
+                # induce dimension
+                x = (
+                    tf.expand_dims(minimap, 0),
+                    tf.expand_dims(screen, 0),
+                    tf.expand_dims(available_action, 0)
+                )
+                # print('minimap shape', tf.expand_dims(minimap, 0).shape)
+                # print('screen shape', tf.expand_dims(screen, 0).shape)
+                # print('available_action shape', tf.expand_dims(available_action, 0).shape)
+                self.model.temp_call(x)
 
         # Compute targets and masks
-        minimaps = []
-        screens = []
-        available_actions = []
+        # minimaps = []
+        # screens = []
+        # available_actions = []
 
-        target_value = np.zeros([len(episode_rb)], dtype=np.float32)
-        target_value[-1] = R
+        # target_value = np.zeros([len(episode_rb)], dtype=np.float32)
+        # target_value[-1] = R
 
-        valid_coordinate = np.zeros([len(episode_rb)], dtype=np.float32)
-        selected_coordinate = np.zeros([len(episode_rb), self.obs_spec["screen"][0]], dtype=np.float32)
-        valid_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
-        selected_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
+        # valid_coordinate = np.zeros([len(episode_rb)], dtype=np.float32)
+        # selected_coordinate = np.zeros([len(episode_rb), self.obs_spec["screen"][0]], dtype=np.float32)
+        # valid_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
+        # selected_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
 
-        episode_rb.reverse()
-        for i, [obs, action, _] in enumerate(episode_rb):
-            minimap, screen, available_action = model_input(obs)
+        # episode_rb.reverse()
+        # for i, [obs, action, _] in enumerate(episode_rb):
+        #     minimap, screen, available_action = model_input(obs)
 
-            minimaps.append(minimap)
-            screens.append(screen)
-            available_actions.append(available_action)
+        #     minimaps.append(minimap)
+        #     screens.append(screen)
+        #     available_actions.append(available_action)
 
-            reward = obs.reward
-            act_id = action.function
-            act_args = action.arguments
+        #     reward = obs.reward
+        #     act_id = action.function
+        #     act_args = action.arguments
 
-            target_value[i] = reward + discount * target_value[i-1]
+        #     target_value[i] = reward + discount * target_value[i-1]
 
-            valid_action[i, obs.observation["available_actions"]] = 1
-            selected_action[i, act_id] = 1
+        #     valid_action[i, obs.observation["available_actions"]] = 1
+        #     selected_action[i, act_id] = 1
 
-            args = actions.FUNCTIONS[act_id].args
-            for arg, act_arg in zip(args, act_args):
-                if arg.name in ('screen', 'minimap', 'screen2'):
-                    ind = act_arg[1] * self.obs_spec["screen"][0] + act_arg[0]
-                    valid_coordinate[i] = 1
-                    selected_coordinate[i, ind] = 1
+        #     args = actions.FUNCTIONS[act_id].args
+        #     for arg, act_arg in zip(args, act_args):
+        #         if arg.name in ('screen', 'minimap', 'screen2'):
+        #             ind = act_arg[1] * self.obs_spec["screen"][0] + act_arg[0]
+        #             valid_coordinate[i] = 1
+        #             selected_coordinate[i, ind] = 1
 
-        minimaps = tf.constant(minimaps, tf.float32)
-        screens = tf.constant(screens, tf.float32)
-        available_actions = tf.constant(available_actions, tf.float32)
+        # minimaps = tf.constant(minimaps, tf.float32)
+        # screens = tf.constant(screens, tf.float32)
+        # available_actions = tf.constant(available_actions, tf.float32)
       
         # real training part
         # x = minimaps, screens, available_actions
         # with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=step_counter):
         #     with tfe.GradientTape() as tape:
-        #         coordinate, action, value = self.model(x, training=True)
+        #         coordinate, action, value = self.model.predict(x, training=True)
         #         loss_value = self.loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value)
         #         tf.contrib.summary.scalar('loss', loss_value)
         #     grads = tape.gradient(loss_value, self.model.variables)
@@ -195,11 +202,9 @@ class AtariAgent(ModelAgent):
         with tf.device('/gpu:0'):
             # TODO: add training epochs
             for episode_rb in rb:
-                print(type(episode_rb))
                 start = time.time()
                 with summary_writer.as_default():
-                    pass
-                    # self._train(self.optimizer, episode_rb, step_counter, discount)
+                    self._train(self.optimizer, episode_rb, step_counter, discount)
                 end = time.time()
                 print('\nTrain time for episode #%d (%d total steps): %f' %
                         (self.root.save_counter.numpy() + 1,
