@@ -57,8 +57,7 @@ class AtariAgent(ModelAgent):
         (coordinate, action, value) = self.model.predict(x)
 
         # reduce dimentsion
-        temp = tf.argmax(coordinate, 1)[0]
-        y, x = temp // self.obs_spec['screen'][0], temp % self.obs_spec['screen'][0]
+        y, x = tf.argmax(coordinate, 1)[0].numpy() // self.obs_spec['screen'][1], tf.argmax(coordinate, 1)[0].numpy() % self.obs_spec['screen'][1]
         action = action[0]
         value = value[0]
 
@@ -69,7 +68,7 @@ class AtariAgent(ModelAgent):
         # TODO: better implementation
         act_args = []
         for arg in actions.FUNCTIONS[action_selected].args:
-            if arg.name in ('screen', 'minimap', 'screen2'):
+            if arg.name in ('screen', 'screen2', 'minimap'):
                 act_args.append([x, y])
             else:
                 act_args.append([0])
@@ -77,9 +76,7 @@ class AtariAgent(ModelAgent):
 
     def build_model(self, initializer=tf.zeros):
         self.model = AtariModel(
-            self.obs_spec["screen"][0], self.obs_spec["minimap"][0], possible_action_num)
-        print('screen', self.obs_spec["screen"])
-        print('minimap', self.obs_spec["minimap"])
+            self.obs_spec["screen"][1], self.obs_spec["minimap"][1], possible_action_num)
 
         # TODO: Training
         self.optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
