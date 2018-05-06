@@ -7,7 +7,7 @@ import numpy as np
 tfe.enable_eager_execution()
 from Networks.atari import AtariModel
 import time
-from utils import model_input
+from utils import model_input, calculate_target_value, collect_episode_model_input, collect_coordinate_feature, collect_action_feature
 
 
 possible_action_num = len(actions.FUNCTIONS)
@@ -100,66 +100,20 @@ class AtariAgent(ModelAgent):
       return policy_loss + value_loss
 
     def _train(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
-        # Compute R, which is value of the last observation
-        obs = episode_rb[-1][-1]
-        if obs.last():
-            R = 0
-        else:
-            (minimap, screen, available_action) = model_input(obs)
+        # get target value
+        target_value = calculate_target_value(episode_rb, discount, self.model)
 
-            # induce dimension
-            x = (
-                tf.expand_dims(minimap, 0),
-                tf.expand_dims(screen, 0),
-                tf.expand_dims(available_action, 0)
-            )
-            _, _, R = self.model(x)
-            R = R[0].numpy()
+        # get model input
+        x = collect_episode_model_input(episode_rb)
 
-        # Compute targets and masks
-        minimaps = []
-        screens = []
-        available_actions = []
+        # collect coordinate-related feature
+        valid_coordinate, selected_coordinate = collect_coordinate_feature(episode_rb, self.obs_spec['screen'][1])
 
-        target_value = np.zeros([len(episode_rb)], dtype=np.float32)
-        target_value[-1] = R
-
-        valid_coordinate = np.zeros([len(episode_rb)], dtype=np.float32)
-        selected_coordinate = np.zeros([len(episode_rb), self.obs_spec["screen"][1] ** 2], dtype=np.float32)
-        valid_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
-        selected_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
-
-        episode_rb.reverse()
-        for i, [obs, action, _] in enumerate(episode_rb):
-            minimap, screen, available_action = model_input(obs)
-
-            minimaps.append(minimap.numpy())
-            screens.append(screen.numpy())
-            available_actions.append(available_action.numpy())
-
-            reward = obs.reward
-            act_id = action.function
-            act_args = action.arguments
-
-            target_value[i] = reward + discount * target_value[i-1]
-
-            valid_action[i, obs.observation["available_actions"]] = 1
-            selected_action[i, act_id] = 1
-
-            args = actions.FUNCTIONS[act_id].args
-            for arg, act_arg in zip(args, act_args):
-                if arg.name in ('screen', 'minimap', 'screen2'):
-                    ind = act_arg[1] * self.obs_spec["screen"][1] + act_arg[0]
-                    valid_coordinate[i] = 1
-                    selected_coordinate[i, ind] = 1
-
-        minimaps = tf.constant(minimaps, tf.float32)
-        screens = tf.constant(screens, tf.float32)
-        available_actions = tf.constant(available_actions, tf.float32)
+        # collect action-related feature
+        valid_action, selected_action = collect_action_feature(episode_rb)
       
         # real training part
         start = time.time()
-        x = minimaps, screens, available_actions
         with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=step_counter):
             with tfe.GradientTape() as tape:
                 coordinate, action, value = self.model(x)

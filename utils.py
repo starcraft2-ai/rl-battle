@@ -2,6 +2,7 @@ from typing import Tuple, List
 import tensorflow as tf
 from pysc2.lib import actions
 import numpy as np
+from copy import deepcopy
 
 CommonState = List[float]
 AgentState = List[float]
@@ -11,6 +12,8 @@ ActionProbablity = List[float]
 ActionTable = List[ActionProbablity]
 Actions = List[int]
 Transition = Tuple[GameState, Actions, GameState]
+
+possible_action_num = len(actions.FUNCTIONS)
 
 import random
 
@@ -41,8 +44,6 @@ def best_actions(action_table: ActionTable) -> Actions:
 
 # extract minimap, screen, available_actions
 def model_input(obs):
-    possible_action_num = len(actions.FUNCTIONS)
-
     (minimap, screen, available_actions) = (
         tf.constant(obs.observation['minimap'], tf.float32),
         tf.constant(obs.observation['screen'], tf.float32),
@@ -55,7 +56,6 @@ def model_input(obs):
 # Compute target value
 def calculate_target_value(episode_rb, discount, model):
     # deepcopy the array, where element is not deepcopied, but that does not matter
-    from copy import deepcopy
     episode_rb = deepcopy(episode_rb)
 
     # get last value from last observation
@@ -87,7 +87,6 @@ def calculate_target_value(episode_rb, discount, model):
 # collect model inputs for a single episode
 def collect_episode_model_input(episode_rb):
     # deepcopy the array, where element is not deepcopied, but that does not matter
-    from copy import deepcopy
     episode_rb = deepcopy(episode_rb)
 
     # Compute targets and masks
@@ -96,7 +95,7 @@ def collect_episode_model_input(episode_rb):
     available_actions = []
 
     episode_rb.reverse()
-    for i, [obs, action, _] in enumerate(episode_rb):
+    for _, [obs, _, _] in enumerate(episode_rb):
         minimap, screen, available_action = model_input(obs)
 
         minimaps.append(minimap.numpy())
@@ -108,5 +107,37 @@ def collect_episode_model_input(episode_rb):
     available_actions = tf.constant(available_actions, tf.float32)
     return minimaps, screens, available_actions
 
-def collect_coordinate_feature(episode_rb):
-    pass
+# collect coordinate-related feature
+def collect_coordinate_feature(episode_rb, ssize):
+    # deepcopy the array, where element is not deepcopied, but that does not matter
+    episode_rb = deepcopy(episode_rb)
+
+    valid_coordinate = np.zeros([len(episode_rb)], dtype=np.float32)
+    selected_coordinate = np.zeros([len(episode_rb), ssize ** 2], dtype=np.float32)
+
+    episode_rb.reverse()
+    for i, [_, action, _] in enumerate(episode_rb):
+        act_id = action.function
+        act_args = action.arguments
+
+        args = actions.FUNCTIONS[act_id].args
+        for arg, act_arg in zip(args, act_args):
+            if arg.name in ('screen', 'minimap', 'screen2'):
+                ind = act_arg[1] * ssize + act_arg[0]
+                valid_coordinate[i] = 1
+                selected_coordinate[i, ind] = 1
+    return valid_coordinate, selected_coordinate
+
+def collect_action_feature(episode_rb):
+    # deepcopy the array, where element is not deepcopied, but that does not matter
+    episode_rb = deepcopy(episode_rb)
+
+    valid_action = np.zeros([len(episode_rb), possible_action_num], dtype=np.float32)
+    selected_action = np.zeros([len(episode_rb), possible_action_num], dtype=np.float32)
+
+    episode_rb.reverse()
+    for i, [obs, action, _] in enumerate(episode_rb):
+        act_id = action.function
+        valid_action[i, obs.observation["available_actions"]] = 1
+        selected_action[i, act_id] = 1
+    return valid_action, selected_action
