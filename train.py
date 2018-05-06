@@ -84,8 +84,9 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
                 (optimizer, root_node) = agent_env.get_optimizer_and_node()
         agent_env.set_model(agent_model, optimizer, root_node)
 
-
-        train_runloop.run_loop([agent_env], env, FLAGS.max_agent_steps)
+        def save_func:
+            agent_env.save_model('') 
+        train_runloop.run_loop([agent_env], env, FLAGS.max_agent_steps, 50, save_func)
 
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)

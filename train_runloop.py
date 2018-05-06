@@ -17,7 +17,7 @@
 import time
 
 
-def run_loop(agents, env, max_frames=0):
+def run_loop(agents, env, max_frames=0, auto_call = 50, every_auto_call = None):
   """A run loop to have agents and an environment interact."""
   total_frames = 0
   start_time = time.time()
@@ -44,6 +44,8 @@ def run_loop(agents, env, max_frames=0):
         timesteps = env.step(actions)
         [agent.after_step(old_timestep, timestep)
                    for agent, old_timestep, timestep in zip(agents, old_timesteps, timesteps)]
+        if total_frames % auto_save is 0 and every_auto_call is not None:
+          every_auto_call()
   except KeyboardInterrupt:
     pass
   finally:

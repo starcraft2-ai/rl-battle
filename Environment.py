@@ -178,4 +178,5 @@ class A2CEnvironment(Environment):
 
     def save_model(self, checkpoint_dir):
         checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
-        self.root.save(file_prefix=checkpoint_prefix)
+        with self.lock:
+            self.root.save(file_prefix=checkpoint_prefix)
