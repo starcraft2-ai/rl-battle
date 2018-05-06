@@ -7,19 +7,10 @@ import numpy as np
 tfe.enable_eager_execution()
 from Networks.atari import AtariModel
 import time
+from utils import model_input
 
 
 possible_action_num = len(actions.FUNCTIONS)
-
-def model_input(obs):
-    (minimap, screen, available_actions) = (
-        tf.constant(obs.observation['minimap'], tf.float32),
-        tf.constant(obs.observation['screen'], tf.float32),
-        np.zeros([possible_action_num], dtype=np.float32)
-    )
-    available_actions[obs.observation['available_actions']] = 1
-    available_actions = tf.constant(available_actions, tf.float32)
-    return (minimap, screen, available_actions)
 
 class AtariAgent(ModelAgent):
     def __init__(self, name='AtariAgent'):
@@ -62,7 +53,6 @@ class AtariAgent(ModelAgent):
         action_selected = tf.argmax(action * available_actions).numpy()
 
         # form action and call
-        # TODO: better implementation
         act_args = []
         for arg in actions.FUNCTIONS[action_selected].args:
             if arg.name in ('screen', 'screen2', 'minimap'):
@@ -75,7 +65,6 @@ class AtariAgent(ModelAgent):
         self.model = AtariModel(
             self.obs_spec["screen"][1], self.obs_spec["minimap"][1], possible_action_num)
 
-        # TODO: Training
         self.optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
         self.root = tfe.Checkpoint(optimizer=self.optimizer,
                                    model=self.model,
@@ -110,7 +99,6 @@ class AtariAgent(ModelAgent):
       tf.contrib.summary.scalar('value_loss', value_loss)
       return policy_loss + value_loss
 
-    # TODO
     def _train(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
         # Compute R, which is value of the last observation
         obs = episode_rb[-1][-1]
@@ -184,13 +172,13 @@ class AtariAgent(ModelAgent):
                 print('Step #%d\tLoss: %.6f (%d steps/sec)' % (step_counter.numpy(), loss_value, rate))
                 start = time.time()
     
-    def train_model(self, rb, model_dir, discount, train_dir):
+    def train_model(self, rb, model_dir, discount, summary_dir):
         # Create and restore checkpoint (if one exists on the path)
         step_counter = tf.train.get_or_create_global_step()
 
         # Create file writers for writing TensorBoard summaries.
         summary_writer = tf.contrib.summary.create_file_writer(
-            train_dir, flush_millis=10000)
+            summary_dir, flush_millis=10000)
 
         # Train
         # TODO: use gpu to run
@@ -200,7 +188,7 @@ class AtariAgent(ModelAgent):
         for episode_rb in rb:
             start = time.time()
             with summary_writer.as_default():
-                self._train(self.optimizer, episode_rb, step_counter, discount, log_interval=100)
+                self._train(self.optimizer, episode_rb, step_counter, discount, log_interval=1)
             end = time.time()
             print('\nTrain time for episode #%d (%d total steps): %f' %
                     (self.root.save_counter.numpy() + 1,

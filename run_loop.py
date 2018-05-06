@@ -20,8 +20,17 @@ from __future__ import print_function
 import time
 
 
-def run_loop(agents, env, max_frames=0, training=False):
+def run_loop(agents, env, max_frames=0, training=False, model_dir=None):
   """A run loop to have agents and an environment interact."""
+
+  # training is null
+  if training is None:
+    raise AssertionError('training should not be None')
+
+  # is eval mode but the model_dir is None
+  if training is False and model_dir is None:
+    raise AssertionError('Illegal Arguments')
+
   total_frames = 0
   start_time = time.time()
 
@@ -29,14 +38,16 @@ def run_loop(agents, env, max_frames=0, training=False):
   observation_spec = env.observation_spec()
   for agent in agents:
     agent.setup(observation_spec, action_spec)
-  if training and training is True:
+    if training is False:
+      agent.load_model(model_dir)
+  if training is True:
     transitions = []
   try:
     while True:
       timesteps = env.reset()
       for a in agents:
         a.reset()
-      if training and training is True:
+      if training is True:
         transitions.append([])
       while True:
         total_frames += 1
@@ -46,7 +57,7 @@ def run_loop(agents, env, max_frames=0, training=False):
           return
         if timesteps[0].last():
           break
-        if training and training is True:
+        if training is True:
                 last_timesteps = timesteps
                 timesteps = env.step(actions)
                 transitions[-1].append([last_timesteps[0], actions[0], timesteps[0]])
@@ -58,5 +69,5 @@ def run_loop(agents, env, max_frames=0, training=False):
     elapsed_time = time.time() - start_time
     print("Took %.3f seconds for %s steps: %.3f fps" % (
         elapsed_time, total_frames, total_frames / elapsed_time))
-    if training and training is True:
+    if training is True:
         return transitions 

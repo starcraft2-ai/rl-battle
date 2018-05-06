@@ -28,6 +28,7 @@ flags.DEFINE_integer("screen_resolution", 64,
 flags.DEFINE_integer("minimap_resolution", 64,
                      "Resolution for minimap feature layers.")
 
+flags.DEFINE_float("discount", 0.9, "Discount for reinforcement learning rate")
 flags.DEFINE_integer("max_agent_steps", 2500, "Total agent steps.")
 flags.DEFINE_integer("game_steps_per_episode", 0, "Game steps per episode.")
 flags.DEFINE_integer("step_mul", 8, "Game steps per agent step.")
@@ -47,8 +48,19 @@ flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
 
 flags.DEFINE_string("map", None, "Name of a map to use.")
+
+flags.DEFINE_string("model_dir", ".train-model", "Where to store model")
+flags.DEFINE_string("summary_dir", ".train-summary", "Where to store summary")
+
 flags.mark_flag_as_required("map")
 
+def test_replay_buffer(rb):
+    print('Episodes:',len(rb))
+    total_transitions = 0
+    for i, transition in enumerate(rb):
+            print('Episode {i}: {transition} transitions'.format(i=i, transition=len(transition)))
+            total_transitions += len(transition)
+    print('Transitions in total', total_transitions)
 
 def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
     with sc2_env.SC2Env(
@@ -66,25 +78,10 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
         agent = agent_cls()
         if FLAGS.train is True:
             rb = run_loop.run_loop([agent], env, FLAGS.max_agent_steps, training=True)
-            print('Episodes:',len(rb))
-            total_transitions = 0
-            for i, transition in enumerate(rb):
-                    print('Episode {i}: {transition} transitions'.format(i=i, transition=len(transition)))
-                    total_transitions += len(transition)
-            print('Transitions in total', total_transitions)
-
-            print('Test train')
-            # TODO: read all directories from outside
-            # TODO: modify discount or read discount from outside
-            discount = 0.9
-            model_dir = '.train-checkpoint'
-            train_dir = '.train-summary'
-            agent.train_model(rb, model_dir, discount, train_dir)
+            # test_replay_buffer(rb)
+            agent.train_model(rb, FLAGS.model_dir, FLAGS.discount, FLAGS.summary_dir)
         else:
-            # TODO: load model
-            # if directory_exists(checkpoint_dir):
-            #     agent.load_model(checkpoint_dir)
-            run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
+            run_loop.run_loop([agent], env, FLAGS.max_agent_steps, False, FLAGS.model_dir)
         
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)
