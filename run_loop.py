@@ -47,15 +47,19 @@ def run_loop(agents, env, max_frames=0, training=False, model_dir=None):
       timesteps = env.reset()
       for a in agents:
         a.reset()
-      if training is True:
-        transitions.append([])
       while True:
         total_frames += 1
         actions = [agent.step(timestep)
                    for agent, timestep in zip(agents, timesteps)]
         if max_frames and total_frames >= max_frames:
-          return
+          if training is True:
+            return transitions
+          else:
+            return
         if timesteps[0].last():
+          if training is True:
+            yield transitions
+            transitions = []
           break
         if training is True:
                 last_timesteps = timesteps
@@ -69,5 +73,3 @@ def run_loop(agents, env, max_frames=0, training=False, model_dir=None):
     elapsed_time = time.time() - start_time
     print("Took %.3f seconds for %s steps: %.3f fps" % (
         elapsed_time, total_frames, total_frames / elapsed_time))
-    if training is True:
-        return transitions 
