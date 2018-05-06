@@ -25,7 +25,13 @@ class AtariAgent(ModelAgent):
     def reset(self):
         super().reset()
 
-    def simulate(self, obs):
+    def step(self, obs):
+        super().step(obs)
+        self.rewards[-1] += obs.reward
+        if obs.last():
+            self.rewards.append(0)
+
+        # predict
         (screen, minimap, available_actions) = (
             tf.constant(obs.observation['screen'], tf.float32),
             tf.constant(obs.observation['minimap'], tf.float32),
@@ -34,24 +40,14 @@ class AtariAgent(ModelAgent):
         available_actions[obs.observation['available_actions']] = 1
 
         # induce dimension
-        x = (
+        input = (
             tf.expand_dims(minimap, 0),
             tf.expand_dims(screen, 0),
             tf.expand_dims(available_actions, 0)
         )
 
         # predict
-        (coordinate, action, value) = self.model.predict(x)
-        return (coordinate, action, value)
-
-    def step(self, obs):
-        super().step(obs)
-        self.rewards[-1] += obs.reward
-        if obs.last():
-            self.rewards.append(0)
-
-        # predict
-        (coordinate, action, value) = self.simulate(obs)
+        (coordinate, action, value) = self.model.predict(input)
 
         # reduce dimentsion
         y, x = (
@@ -77,6 +73,7 @@ class AtariAgent(ModelAgent):
         self.last_value = value
         self.last_action = (action_selected, act_args)
 
+        print(actions.FUNCTIONS[action_selected].args)
         return actions.FunctionCall(action_selected, act_args)
 
     def build_model(self, initializer=tf.zeros):
