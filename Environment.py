@@ -31,6 +31,9 @@ class Environment:
     def step(self, observation):
         pass
 
+    def after_step(self, before_step_observation, observation):
+        pass
+
     def build_model(self):
         pass
 
@@ -54,10 +57,7 @@ class A2CEnvironment(Environment):
         self.model = model
         self.agent.model = model
         self.replay_buffer = []
-        self.last_observation = None
-        self.last_action = None
-        self.last_value = None
-        self.last_coordinate = None
+        self.last_features = None
         self.M = M
         self.gamma = gamma
         self.action_spec = None
@@ -83,70 +83,67 @@ class A2CEnvironment(Environment):
     def step(self, observation):
         '''
         transit from current state to next using action
+        actaully `observation` is `last_observation`
         '''
         # take long CPU time
-        with tfe.GradientTape() as tape:
+        if(self.last_features):
+            result = self.agent.act(self.last_features)
+        else:
             result = self.agent.step(observation)
-
-            action     = self.agent.last_action
-            value      = self.agent.last_value
-            coordinate = self.agent.last_coordinate
-
-            if self.last_observation is not None:
-                '''
-                Actor-Critic Algorithm Here
-                This is actaully transition for last round
-                because we are using passive mode of game environemnt for actions
-                '''
-                transition = (self.last_observation, self.last_action, observation)
-                last_reward = self.last_observation.reward
-                self.replay_buffer.append(transition)
-
-                # TODO: discover the possibliby of using batch on PySC2
-                # Maybe not
-                # samples = random.sample(self.replay_buffer, self.M)
-                # for (observation_0, action, observation_1) in samples:
-                #     (_, _, value_1) = self.agent.simulate(observation_1)
-
-                # Online
-            
-                target_value = last_reward + self.gamma * value
-
-                #TODO: why
-                advantage = tf.stop_gradient(target_value - self.last_value)
-
-                coordinate_log_prob = tf.log(
-                    tf.clip_by_value(
-                        tf.reduce_sum(self.last_coordinate)
-                        , 1e-10, 1.
-                ))
-                action_log_prob = tf.log(
-                    tf.clip_by_value(
-                        tf.reduce_sum(self.last_action)
-                        , 1e-10, 1.
-                ))
-
-                loss_policy = - tf.reduce_mean((coordinate_log_prob + action_log_prob) * advantage)
-                loss_value = - tf.reduce_mean(target_value * advantage)
-
-                loss = loss_policy + loss_value
-
-                # TODO: figureout a way to bp on action
-                #
-                # loss = A * log_loss(grad last_action)
-
-                tf.contrib.summary.scalar('loss', loss)
-
-                # Tape
-                grads = tape.gradient(loss, self.agent.model.variables)
-                self.optimizer.apply_gradients(
-                    zip(grads, self.agent.model.variables))
-
-        self.last_observation = observation
-        self.last_action      = action
-        self.last_value       = value
-        self.last_coordinate  = coordinate
+           
         return result
+
+    def after_step(self, before_step_observation, observation):
+        '''
+        Actor-Critic Algorithm
+        '''
+        # transition = (before_step_observation, self.last_action, observation)
+        # last_reward = self.last_observation.reward
+        # self.replay_buffer.append(transition)
+
+        # TODO: discover the possibliby of using batch on PySC2
+        # Maybe not
+        # samples = random.sample(self.replay_buffer, self.M)
+        # for (observation_0, action, observation_1) in samples:
+        #     (_, _, value_1) = self.agent.simulate(observation_1)
+
+        # Online
+        with tfe.GradientTape() as tape:
+            (
+                before_coordinate, 
+                before_action, 
+                before_value
+            ) = self.agent.fit(before_step_observation)
+            (coordinate, action, value) = self.agent.fit(observation)
+            self.last_features = (coordinate, action, value)
+
+            target_value = before_step_observation.reward + self.gamma * value[0]
+
+            #TODO: why
+            advantage = tf.stop_gradient(target_value - before_value)
+
+            coordinate_log_prob = tf.log(
+                tf.clip_by_value(
+                    tf.reduce_sum(before_coordinate)
+                    , 1e-10, 1.
+            ))
+            action_log_prob = tf.log(
+                tf.clip_by_value(
+                    tf.reduce_sum(before_action)
+                    , 1e-10, 1.
+            ))
+
+            loss_policy = - tf.reduce_mean((coordinate_log_prob + action_log_prob) * advantage)
+            loss_value = - tf.reduce_mean(target_value * advantage)
+
+            loss = loss_policy + loss_value
+
+            tf.contrib.summary.scalar('loss', loss)
+
+            # Tape
+            grads = tape.gradient(loss, self.agent.model.variables)
+            self.optimizer.apply_gradients(
+                zip(grads, self.agent.model.variables))
 
     def set_replay_buffer(self, replay_buffer):
         '''

@@ -5,7 +5,7 @@ from multiprocessing import Pool, Lock
 
 from pysc2 import maps
 from pysc2.env import available_actions_printer
-from pysc2.env import run_loop
+import train_runloop
 from pysc2.env import sc2_env
 from pysc2.lib import stopwatch
 
@@ -85,7 +85,7 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
         agent_env.set_model(agent_model, optimizer, root_node)
 
 
-        run_loop.run_loop([agent_env], env, FLAGS.max_agent_steps)
+        train_runloop.run_loop([agent_env], env, FLAGS.max_agent_steps)
 
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)

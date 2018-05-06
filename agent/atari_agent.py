@@ -16,12 +16,13 @@ class AtariAgent(ModelAgent):
         super().__init__()
         self.name = name
         self.model: AtariModel = model
-        self.rewards = [0]
         self.obs_spec = None
         self.action_spec = None
 
     def setup(self, obs_spec, action_spec):
         super().setup(obs_spec, action_spec)
+        if(self.model is None):
+            self.build_model()
 
     def reset(self):
         super().reset()
@@ -42,48 +43,31 @@ class AtariAgent(ModelAgent):
         )
 
         # predict
-        return self.model.predict(input)
+        (coordinate, action, value) = self.model.predict(input)
+
+        return (coordinate, action * available_actions, value)
 
     def step(self, obs):
         super().step(obs)
-        self.rewards[-1] += obs.reward
-        if obs.last():
-            self.rewards.append(0)
-
-        # predict 
-        # -- same as fit
-        (screen, minimap, available_actions) = (
-            tf.constant(obs.observation['screen'], tf.float32),
-            tf.constant(obs.observation['minimap'], tf.float32),
-            np.zeros([possible_action_num], dtype=np.float32)
-        )
-        available_actions[obs.observation['available_actions']] = 1
-
-        # induce dimension
-        input = (
-            tf.expand_dims(minimap, 0),
-            tf.expand_dims(screen, 0),
-            tf.expand_dims(available_actions, 0)
-        )
 
         # predict
-        (coordinate, action, value) = self.model.predict(input)
-        self.last_value = value[0]
-        self.last_action = action[0]
-        self.last_coordinate = coordinate[0]
+        (coordinate, action, value) = self.fit(obs)
+        features = (coordinate, action, value)
 
-        # -- same as fit -- 
+        return self.act(features)
 
-        # reduce dimentsion
+    def act(self, features):
+        (coordinate, action, value) = features
+
         y, x = (
-            tf.argmax(coordinate, 1)[0].numpy() // self.obs_spec['screen'][1], 
-            tf.argmax(coordinate, 1)[0].numpy() %  self.obs_spec['screen'][1]
+            tf.argmax(coordinate, 1)[0].numpy() // self.obs_spec['screen'][1],
+            tf.argmax(coordinate, 1)[0].numpy() % self.obs_spec['screen'][1]
         )
         action = action[0]
         value = value[0]
 
         # select available_actions
-        action_selected = tf.argmax(action * available_actions).numpy()
+        action_selected = tf.argmax(action).numpy()
 
         # form action and call
         # TODO: better implementation
@@ -94,10 +78,6 @@ class AtariAgent(ModelAgent):
             else:
                 act_args.append([0])
 
-        # set value for public access or train use
-        
-
-        print(actions.FUNCTIONS[action_selected].args)
         return actions.FunctionCall(action_selected, act_args)
 
     def build_model(self, initializer=tf.zeros):
