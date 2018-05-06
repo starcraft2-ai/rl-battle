@@ -103,7 +103,7 @@ class AtariAgent(ModelAgent):
       action_log_prob = valid_coordinate * coordinate_log_prob + action_log_prob
       error = tf.stop_gradient(target_value - value)
       policy_loss = - tf.reduce_mean(action_log_prob * error)
-      value_loss = - tf.reduce_mean(self.value * error)
+      value_loss = - tf.reduce_mean(value * error)
 
       # record losses
       tf.contrib.summary.scalar('policy_loss', policy_loss)
@@ -170,14 +170,19 @@ class AtariAgent(ModelAgent):
         available_actions = tf.constant(available_actions, tf.float32)
       
         # real training part
-        # x = minimaps, screens, available_actions
-        # with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=step_counter):
-        #     with tfe.GradientTape() as tape:
-        #         coordinate, action, value = self.model.predict(x, training=True)
-        #         loss_value = self.loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value)
-        #         tf.contrib.summary.scalar('loss', loss_value)
-        #     grads = tape.gradient(loss_value, self.model.variables)
-        #     optimizer.apply_gradients(zip(grads, self.model.variables), global_step=step_counter)
+        start = time.time()
+        x = minimaps, screens, available_actions
+        with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=step_counter):
+            with tfe.GradientTape() as tape:
+                coordinate, action, value = self.model(x)
+                loss_value = self.loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value)
+                tf.contrib.summary.scalar('loss', loss_value)
+            grads = tape.gradient(loss_value, self.model.variables)
+            optimizer.apply_gradients(zip(grads, self.model.variables), global_step=step_counter)
+            if log_interval and step_counter.numpy() % log_interval == 0:
+                rate = log_interval / (time.time() - start)
+                print('Step #%d\tLoss: %.6f (%d steps/sec)' % (step_counter.numpy(), loss_value, rate))
+                start = time.time()
     
     def train_model(self, rb, model_dir, discount, train_dir):
         # Create and restore checkpoint (if one exists on the path)
@@ -190,11 +195,12 @@ class AtariAgent(ModelAgent):
         # Train
         # TODO: use gpu to run
         # with tf.device('/device:GPU:0'):
+        print('number of gpus', tfe.num_gpus())
         # TODO: add training epochs
         for episode_rb in rb:
             start = time.time()
             with summary_writer.as_default():
-                self._train(self.optimizer, episode_rb, step_counter, discount)
+                self._train(self.optimizer, episode_rb, step_counter, discount, log_interval=100)
             end = time.time()
             print('\nTrain time for episode #%d (%d total steps): %f' %
                     (self.root.save_counter.numpy() + 1,
