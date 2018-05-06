@@ -18,6 +18,7 @@ def model_input(obs):
         np.zeros([possible_action_num], dtype=np.float32)
     )
     available_actions[obs.observation['available_actions']] = 1
+    available_actions = tf.constant(available_actions, tf.float32)
     return (minimap, screen, available_actions)
 
 class AtariAgent(ModelAgent):
@@ -109,7 +110,7 @@ class AtariAgent(ModelAgent):
       tf.contrib.summary.scalar('value_loss', value_loss)
       return policy_loss + value_loss
 
-    #TODO
+    # TODO
     def _train(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
         # Compute R, which is value of the last observation
         obs = episode_rb[-1][-1]
@@ -132,13 +133,11 @@ class AtariAgent(ModelAgent):
         screens = []
         available_actions = []
 
-        # TODO: tensor has no len()
         target_value = np.zeros([len(episode_rb)], dtype=np.float32)
         target_value[-1] = R
 
         valid_coordinate = np.zeros([len(episode_rb)], dtype=np.float32)
-        # TODO: obs_spec
-        selected_coordinate = np.zeros([len(episode_rb), self.obs_spec["screen"][0]], dtype=np.float32)
+        selected_coordinate = np.zeros([len(episode_rb), self.obs_spec["screen"][1] ** 2], dtype=np.float32)
         valid_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
         selected_action = np.zeros([len(episode_rb), len(actions.FUNCTIONS)], dtype=np.float32)
 
@@ -146,9 +145,9 @@ class AtariAgent(ModelAgent):
         for i, [obs, action, _] in enumerate(episode_rb):
             minimap, screen, available_action = model_input(obs)
 
-            minimaps.append(minimap[0].numpy())
-            screens.append(screen[0].numpy())
-            available_actions.append(available_action[0].numpy())
+            minimaps.append(minimap.numpy())
+            screens.append(screen.numpy())
+            available_actions.append(available_action.numpy())
 
             reward = obs.reward
             act_id = action.function
@@ -169,10 +168,6 @@ class AtariAgent(ModelAgent):
         minimaps = tf.constant(minimaps, tf.float32)
         screens = tf.constant(screens, tf.float32)
         available_actions = tf.constant(available_actions, tf.float32)
-        print('R is', R)
-        print('minimaps shape', minimaps.shape)
-        print('screens shape', screens.shape)
-        print('available actions shape', available_actions.shape)
       
         # real training part
         # x = minimaps, screens, available_actions
