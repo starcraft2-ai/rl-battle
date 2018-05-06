@@ -7,11 +7,8 @@ class AtariModel(tf.keras.Model):
     self.ssize = ssize
     self.msize = msize
     self.num_action = num_action
-    print('screen_size:', self.ssize)
-    print('minimap_size:', self.msize)
-    print('num action:', self.num_action)
 
-    self.mconv1 = tf.keras.layers.Conv2D(filters=16, kernel_size=8, strides=4, data_format='channels_first')
+    self.mconv1 = tf.keras.layers.Conv2D(filters=16, kernel_size=8, strides=4)
     self.mconv2 = tf.keras.layers.Conv2D(filters=32, kernel_size=4, strides=2)
     self.mconv_flatten = tf.keras.layers.Flatten()
     self.sconv1 = tf.keras.layers.Conv2D(filters=16, kernel_size=8, strides=4)
@@ -31,8 +28,7 @@ class AtariModel(tf.keras.Model):
     minimap, screen, available_actions = inputs
 
     # handle minimap conv layer
-    # minimap = tf.transpose(minimap, [0, 2, 3, 1])
-    print('eval minimap shape', minimap.shape)
+    minimap = tf.transpose(minimap, [0, 2, 3, 1])
     mconv = self.mconv1(minimap)
     mconv = self.mconv2(mconv)
 
@@ -72,11 +68,13 @@ class AtariModel(tf.keras.Model):
     # extract inputs
     (minimap, screen, available_actions) = inputs
 
+    print('screen shape', screen.shape)
+    print('available actions shape', available_actions.shape)
+
     # handle minimap conv layer
-    # minimap = tf.transpose(minimap, [0, 2, 3, 1])
-    # print('shape', minimap.shape)
-    # print('conv layer input', self.mconv1)
-    print('train minimap shape', minimap.shape)
+    minimap = tf.transpose(minimap, [0, 2, 3, 1])
+    print('minimap shape', minimap.shape)
+    print('input spec', self.mconv1.input_spec)
     mconv = self.mconv1(minimap)
     # mconv = self.mconv2(mconv)
 

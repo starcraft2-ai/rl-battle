@@ -12,13 +12,13 @@ import time
 possible_action_num = len(actions.FUNCTIONS)
 
 def model_input(obs):
-    (screen, minimap, available_actions) = (
-        tf.constant(obs.observation['screen'], tf.float32),
+    (minimap, screen, available_actions) = (
         tf.constant(obs.observation['minimap'], tf.float32),
+        tf.constant(obs.observation['screen'], tf.float32),
         np.zeros([possible_action_num], dtype=np.float32)
     )
     available_actions[obs.observation['available_actions']] = 1
-    return (screen, minimap, available_actions)
+    return (minimap, screen, available_actions)
 
 class AtariAgent(ModelAgent):
     def __init__(self, name='AtariAgent'):
@@ -39,12 +39,8 @@ class AtariAgent(ModelAgent):
         self.rewards[-1] += obs.reward
         if obs.last():
             self.rewards.append(0)
-        (screen, minimap, available_actions) = (
-            tf.constant(obs.observation['screen'], tf.float32),
-            tf.constant(obs.observation['minimap'], tf.float32),
-            np.zeros([possible_action_num], dtype=np.float32)
-        )
-        available_actions[obs.observation['available_actions']] = 1
+
+        (minimap, screen, available_actions) = model_input(obs)
 
         # induce dimension
         x = (
