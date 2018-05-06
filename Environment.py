@@ -140,10 +140,10 @@ class A2CEnvironment(Environment):
 
             tf.contrib.summary.scalar('loss', loss)
 
-            # Tape
-            grads = tape.gradient(loss, self.agent.model.variables)
-            self.optimizer.apply_gradients(
-                zip(grads, self.agent.model.variables))
+        # Tape
+        grads = tape.gradient(loss, self.agent.model.variables)
+        self.optimizer.apply_gradients(
+            zip(grads, self.agent.model.variables))
 
     def set_replay_buffer(self, replay_buffer):
         '''
