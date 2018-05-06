@@ -116,25 +116,20 @@ class AtariAgent(ModelAgent):
     #TODO
     def _train(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
         # Compute R, which is value of the last observation
-        if len(episode_rb[-1]) == 0:
+        obs = episode_rb[-1][-1]
+        if obs.last():
             R = 0
         else:
-            obs = episode_rb[-1][-1]
-            if obs.last():
-                R = 0
-            else:
-                (minimap, screen, available_action) = model_input(obs)
+            (minimap, screen, available_action) = model_input(obs)
 
-                # induce dimension
-                x = (
-                    tf.expand_dims(minimap, 0),
-                    tf.expand_dims(screen, 0),
-                    tf.expand_dims(available_action, 0)
-                )
-                # print('minimap shape', tf.expand_dims(minimap, 0).shape)
-                # print('screen shape', tf.expand_dims(screen, 0).shape)
-                # print('available_action shape', tf.expand_dims(available_action, 0).shape)
-                self.model.temp_call(x)
+            # induce dimension
+            x = (
+                tf.expand_dims(minimap, 0),
+                tf.expand_dims(screen, 0),
+                tf.expand_dims(available_action, 0)
+            )
+            self.model.temp_call(x)
+        # print('R is ', R)
 
         # Compute targets and masks
         # minimaps = []
