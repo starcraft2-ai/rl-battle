@@ -64,7 +64,7 @@ def run_loop(agents, env, max_frames=0, training=False, model_dir=None):
         if training is True:
                 last_timesteps = timesteps
                 timesteps = env.step(actions)
-                transitions[-1].append([last_timesteps[0], actions[0], timesteps[0]])
+                transitions.append([last_timesteps[0], actions[0], timesteps[0]])
         else:
                 timesteps = env.step(actions)
   except KeyboardInterrupt:

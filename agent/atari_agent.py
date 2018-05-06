@@ -126,7 +126,7 @@ class AtariAgent(ModelAgent):
                 print('Step #%d\tLoss: %.6f (%d steps/sec)' % (step_counter.numpy(), loss_value, rate))
                 start = time.time()
     
-    def train_model(self, rb, model_dir, discount, summary_dir):
+    def train_model(self, episode_rb, model_dir, discount, summary_dir):
         # Create and restore checkpoint (if one exists on the path)
         step_counter = tf.train.get_or_create_global_step()
 
@@ -139,13 +139,12 @@ class AtariAgent(ModelAgent):
         # with tf.device('/device:GPU:0'):
         print('number of gpus', tfe.num_gpus())
         # TODO: add training epochs
-        for episode_rb in rb:
-            start = time.time()
-            with summary_writer.as_default():
-                self._train(self.optimizer, episode_rb, step_counter, discount, log_interval=1)
-            end = time.time()
-            print('\nTrain time for episode #%d (%d total steps): %f' %
-                    (self.root.save_counter.numpy() + 1,
-                    step_counter.numpy(),
-                    end - start))
-            self.save_model(model_dir)
+        start = time.time()
+        with summary_writer.as_default():
+            self._train(self.optimizer, episode_rb, step_counter, discount, log_interval=1)
+        end = time.time()
+        print('\nTrain time for episode #%d (%d total steps): %f' %
+                (self.root.save_counter.numpy() + 1,
+                step_counter.numpy(),
+                end - start))
+        self.save_model(model_dir)
