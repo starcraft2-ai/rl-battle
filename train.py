@@ -25,11 +25,11 @@ FLAGS = flags.FLAGS
 flags.DEFINE_bool("render", True, "Whether to render with pygame.")
 flags.DEFINE_integer("screen_resolution", 84,
                      "Resolution for screen feature layers.")
-flags.DEFINE_integer("minimap_resolution", 64,
+flags.DEFINE_integer("minimap_resolution", 84,
                      "Resolution for minimap feature layers.")
 
 flags.DEFINE_integer("game_steps_per_episode", 2500, "Game steps per episode.")
-flags.DEFINE_integer("max_agent_steps", FLAGS.game_steps_per_episode * 100, "Total agent steps.")
+flags.DEFINE_integer("max_agent_steps", 2500 * 100, "Total agent steps.")
 
 flags.DEFINE_integer("step_mul", 8, "Game steps per agent step.")
 
@@ -52,10 +52,11 @@ flags.mark_flag_as_required("map")
 # Multi Process things
 lock = Lock()
 agent_model = None
+(optimizer, root_node) = None, None
 replay_buffer = []
 
 def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
-    global lock, agent_model, replay_buffer
+    global lock, agent_model, replay_buffer, optimizer, root_node
     with sc2_env.SC2Env(
             map_name=map_name,
             agent_race=FLAGS.agent_race,
@@ -68,13 +69,20 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
                              FLAGS.minimap_resolution),
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
-        agent_env = A2CEnvironment(lock, agent_cls)
+        (action_spec, observation_spec) = (
+            env.action_spec(),
+            env.observation_spec()
+            )
 
+        agent_env = A2CEnvironment(lock, agent_cls)
+        agent_env.set_sepcs(action_spec, observation_spec)
+        
         agent_env.set_replay_buffer(replay_buffer)
         with lock:
             if agent_model is None:
                 agent_model = agent_env.build_model()
-        agent_env.set_model(agent_model)
+                (optimizer, root_node) = agent_env.get_optimizer_and_node()
+        agent_env.set_model(agent_model, optimizer, root_node)
 
 
         run_loop.run_loop([agent_env], env, FLAGS.max_agent_steps)

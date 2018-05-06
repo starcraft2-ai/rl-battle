@@ -22,6 +22,13 @@ class AtariModel(tf.keras.Model):
     self.coordinate_flatten = tf.keras.layers.Flatten()
     self.action_fc = tf.keras.layers.Dense(units=num_action, activation=tf.nn.softmax)
     self.value_fc = tf.keras.layers.Dense(units=1, activation=None)
+    # self.variables = [
+    #     self.mconv1, self.mconv2, self.mconv_flatten,
+    #     self.sconv1, self.sconv2, self.sconv_flatten,
+    #     self.aa_flatten, self.aa_fc, self.feat_fc, 
+    #     self.x_fc, self.y_fc, self.coordinate_flatten,
+    #     self.action_fc, self.value_fc
+    # ]
 
   def call(self, inputs):
     # extract inputs

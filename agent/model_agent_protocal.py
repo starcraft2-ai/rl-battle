@@ -6,9 +6,11 @@ class ModelAgent(object):
         self.reward = 0
         self.episodes = 0
         self.steps = 0
-        self.obs_spec = None
-        self.action_spec = None
         self.last_value = 0
+
+    def set_sepcs(self, action_spec, observation_spec):
+        self.obs_spec = observation_spec
+        self.action_spec = action_spec
 
     def setup(self, obs_spec, action_spec):
         self.obs_spec = obs_spec

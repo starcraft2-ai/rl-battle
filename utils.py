@@ -1,6 +1,5 @@
 from typing import Tuple, List
 import tensorflow as tf
-tf.enable_eager_execution()
 
 CommonState = List[float]
 AgentState = List[float]
