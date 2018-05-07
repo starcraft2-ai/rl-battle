@@ -44,6 +44,8 @@ flags.DEFINE_bool("profile", False, "Whether to turn on code profiling.")
 flags.DEFINE_bool("trace", False, "Whether to trace the code execution.")
 flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 
+flags.DEFINE_string("model_dir", "model", "where save and load model")
+flags.mark_flag_as_required("model_dir")
 flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
 
 flags.DEFINE_string("map", None, "Name of a map to use.")
@@ -84,8 +86,8 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
                 (optimizer, root_node) = agent_env.get_optimizer_and_node()
         agent_env.set_model(agent_model, optimizer, root_node)
 
-        def save_func:
-            agent_env.save_model('') 
+        def save_func():
+            agent_env.save_model(FLAGS.model_dir) 
         train_runloop.run_loop([agent_env], env, FLAGS.max_agent_steps, 50, save_func)
 
         if FLAGS.save_replay:
@@ -106,7 +108,7 @@ def main(unused_argv):
     agent_cls = getattr(sys.modules[__name__], FLAGS.agent_name)
 
     async_results = [pool.apply_async(run_thread, (
-        agent_cls, FLAGS.map, False)) for which in range(FLAGS.parallel)]
+        agent_cls, FLAGS.map, FLAGS.render)) for which in range(FLAGS.parallel)]
 
     # Can do anything here
 

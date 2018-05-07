@@ -44,7 +44,7 @@ def run_loop(agents, env, max_frames=0, auto_call = 50, every_auto_call = None):
         timesteps = env.step(actions)
         [agent.after_step(old_timestep, timestep)
                    for agent, old_timestep, timestep in zip(agents, old_timesteps, timesteps)]
-        if total_frames % auto_save is 0 and every_auto_call is not None:
+        if total_frames % auto_call is 0 and every_auto_call is not None:
           every_auto_call()
   except KeyboardInterrupt:
     pass
