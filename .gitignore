@@ -1,3 +1,9 @@
+# model
+model/
+summary/
+.train-model/
+.train-summary/
+
 # IDE
 .vscode/
 .idea/
