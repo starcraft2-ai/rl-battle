@@ -29,3 +29,6 @@ class RandomAgent(base_agent.BaseAgent):
         args = [[numpy.random.randint(0, size) for size in arg.sizes]
                 for arg in self.action_spec.functions[function_id].args]
         return actions.FunctionCall(function_id, args)
+    
+    def load_model(self, model_dir):
+        pass
