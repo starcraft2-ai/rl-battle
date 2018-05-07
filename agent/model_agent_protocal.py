@@ -40,3 +40,9 @@ class ModelAgent(object):
 
     def build_model(self, initializer):
         pass
+
+    def get_optimizer_and_node(self):
+        pass
+    
+    def load_model(self, checkpoint_dir):
+        pass

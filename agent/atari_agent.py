@@ -18,6 +18,7 @@ class AtariAgent(ModelAgent):
         self.model: AtariModel = model
         self.obs_spec = None
         self.action_spec = None
+        self.root = None
 
     def setup(self, obs_spec, action_spec):
         super().setup(obs_spec, action_spec)
@@ -84,3 +85,15 @@ class AtariAgent(ModelAgent):
         self.model = AtariModel(
             self.obs_spec["screen"][1], self.obs_spec["minimap"][1], possible_action_num)
         return self.model
+
+    def get_optimizer_and_node(self):
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        root = tfe.Checkpoint(optimizer=optimizer,
+                                   model=self.model,
+                                   optimizer_step=tf.train.get_or_create_global_step())
+        return (optimizer, root)
+
+    def load_model(self, checkpoint_dir):
+        if(self.root is None):
+            (_, self.root) = self.get_optimizer_and_node()
+        self.root.restore(tf.train.latest_checkpoint(checkpoint_dir))

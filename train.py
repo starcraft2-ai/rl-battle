@@ -88,6 +88,7 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
 
         def save_func():
             agent_env.save_model(FLAGS.model_dir) 
+        agent_env.load_model(FLAGS.model_dir)
         train_runloop.run_loop([agent_env], env, FLAGS.max_agent_steps, 50, save_func)
 
         if FLAGS.save_replay:

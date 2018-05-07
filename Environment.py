@@ -159,11 +159,7 @@ class A2CEnvironment(Environment):
         return self.model
 
     def get_optimizer_and_node(self):
-        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-        root = tfe.Checkpoint(optimizer=optimizer,
-                                   model=self.model,
-                                   optimizer_step=tf.train.get_or_create_global_step())
-        return (optimizer, root)
+        return self.agent.get_optimizer_and_node()
 
     def set_model(self, model, optimizer, root):
         self.model = model
@@ -172,9 +168,7 @@ class A2CEnvironment(Environment):
         self.root = root
 
     def load_model(self, checkpoint_dir):
-        if(self.root is None):
-            (_, self.root) = self.get_optimizer_and_node()
-        self.root.restore(tf.train.latest_checkpoint(checkpoint_dir))
+        self.agent.load_model(checkpoint_dir)
 
     def save_model(self, checkpoint_dir):
         checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
