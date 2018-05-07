@@ -75,7 +75,7 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
         else:
             agent = agent_cls()
 
-        fps_flag = FLAGS.fps if FLAGS.realtime else False
+        fps_flag = FLAGS.fps/FLAGS.step_mul if FLAGS.realtime else False
         run_loop([agent], env, FLAGS.max_agent_steps, fps_flag)
         
         if FLAGS.save_replay:

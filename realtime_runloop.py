@@ -44,10 +44,12 @@ def run_loop(agents, env, max_frames=0, fps = False):
           return
         if timesteps[0].last():
           break
-        timesteps = env.step(actions)
         if fps is not False:
             elapsed_time = time.time() - frame_start_time
-            time.sleep(max(0, 1 / fps - elapsed_time))
+            sleep = max(0, 1 / fps - elapsed_time)
+            time.sleep(sleep)
+        timesteps = env.step(actions)
+
   except KeyboardInterrupt:
     pass
   finally:
