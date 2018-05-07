@@ -137,7 +137,7 @@ class AtariAgent(ModelAgent):
         # Train
         # TODO: use gpu to run
         # with tf.device('/device:GPU:0'):
-        print('number of gpus', tfe.num_gpus())
+        # print('number of gpus', tfe.num_gpus())
         # TODO: add training epochs
         start = time.time()
         with summary_writer.as_default():

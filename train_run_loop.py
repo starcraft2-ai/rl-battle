@@ -18,69 +18,39 @@ from __future__ import division
 from __future__ import print_function
 
 import time
+import sys
 
-
-def run_loop(agents, env, max_frames=0, training=False, model_dir=None):
+def run_loop(agents, env, max_frames=0):
   """A run loop to have agents and an environment interact."""
-  print('Why')
-  # training is null
-  if training is None:
-    raise AssertionError('training should not be None')
-  print('No')
-
-  # is eval mode but the model_dir is None
-  if training is False and model_dir is None:
-    raise AssertionError('Illegal Arguments')
-
-  print('output')
   total_frames = 0
   start_time = time.time()
-  print('wherever')
 
   action_spec = env.action_spec()
   observation_spec = env.observation_spec()
-  print('in')
   for agent in agents:
     agent.setup(observation_spec, action_spec)
-    print('This')
-    if training is False:
-      agent.load_model(model_dir)
-  print('file')
-  if training is True:
-    transitions = []
-  print('I')
+  transitions = []
   try:
     while True:
-      print('don\'t')
       timesteps = env.reset()
       for a in agents:
         a.reset()
       while True:
-        print('know')
         total_frames += 1
         actions = [agent.step(timestep)
                    for agent, timestep in zip(agents, timesteps)]
         if max_frames and total_frames >= max_frames:
-          if training is True:
-            return transitions
-          else:
-            return
+          return transitions
         if timesteps[0].last():
-          if training is True:
-            yield transitions
-            transitions = []
+          yield transitions
+          transitions = []
           break
-        if training is True:
-          last_timesteps = timesteps
-          timesteps = env.step(actions)
-          transitions.append([last_timesteps[0], actions[0], timesteps[0]])
-        else:
-          timesteps = env.step(actions)
+        last_timesteps = timesteps
+        timesteps = env.step(actions)
+        transitions.append([last_timesteps[0], actions[0], timesteps[0]])
   except KeyboardInterrupt:
-    print('here?')
     pass
   finally:
-    print('not likely')
     elapsed_time = time.time() - start_time
     print("Took %.3f seconds for %s steps: %.3f fps" % (
-      elapsed_time, total_frames, total_frames / elapsed_time))
+      elapsed_time, total_frames, total_frames / elapsed_time), file=sys.stderr)

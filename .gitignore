@@ -104,3 +104,7 @@ ENV/
 # mypy
 .mypy_cache/
 .DS_Store
+
+# model files and summary files
+.train-model/
+.train-summary/

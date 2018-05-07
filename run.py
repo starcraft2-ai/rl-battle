@@ -5,8 +5,8 @@ from multiprocessing import Pool
 
 from pysc2 import maps
 from pysc2.env import available_actions_printer
-import run_loop
-#from pysc2.env import run_loop
+import train_run_loop
+import test_run_loop
 from pysc2.env import sc2_env
 from pysc2.lib import stopwatch
 
@@ -54,14 +54,6 @@ flags.DEFINE_string("summary_dir", ".train-summary", "Where to store summary")
 
 flags.mark_flag_as_required("map")
 
-def test_replay_buffer(rb):
-    print('Episodes:',len(rb))
-    total_transitions = 0
-    for i, transition in enumerate(rb):
-            print('Episode {i}: {transition} transitions'.format(i=i, transition=len(transition)))
-            total_transitions += len(transition)
-    print('Transitions in total', total_transitions)
-
 def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
     with sc2_env.SC2Env(
             map_name=map_name,
@@ -78,15 +70,10 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
         agent = agent_cls()
 
         if FLAGS.train is True:
-            for episode_rb in run_loop.run_loop([agent], env, FLAGS.max_agent_steps, FLAGS.train):
-                # test_replay_buffer(rb)
+            for episode_rb in train_run_loop.run_loop([agent], env, FLAGS.max_agent_steps):
                 agent.train_model(episode_rb, FLAGS.model_dir, FLAGS.discount, FLAGS.summary_dir)
         else:
-            print('train', FLAGS.train)
-            print('model dir', FLAGS.model_dir)
-            print('max agent steps', FLAGS.max_agent_steps)
-            run_loop.run_loop([agent], env, FLAGS.max_agent_steps, FLAGS.train, FLAGS.model_dir)
-            print('Finished')
+            test_run_loop.run_loop([agent], env, FLAGS.max_agent_steps, FLAGS.model_dir)
         
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)
