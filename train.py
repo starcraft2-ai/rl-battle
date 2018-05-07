@@ -46,6 +46,8 @@ flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 
 flags.DEFINE_string("model_dir", "model", "where save and load model")
 flags.mark_flag_as_required("model_dir")
+flags.DEFINE_string("summary_dir", "summary", "where save and load summary")
+
 flags.DEFINE_integer("save_every", 500, "Save model checkpoint every n steps.")
 flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
 
@@ -88,8 +90,11 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
         with lock:
             if agent_model is None:
                 agent_model = agent_env.build_model()
+                writer = tf.contrib.summary.create_file_writer(
+                    FLAGS.summary_dir, flush_millis=10*1000)
                 (optimizer, root_node) = agent_env.get_optimizer_and_node()
-        agent_env.set_model(agent_model, optimizer, root_node)
+        agent_env.set_model(model=agent_model,
+                            optimizer=optimizer, root=root_node, writer=writer)
 
         def save_func():
             agent_env.save_model(FLAGS.model_dir)
@@ -105,9 +110,6 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
 
 def main(unused_argv):
     """Run an agent."""
-    global writer
-    writer = tf.contrib.summary.create_file_writer(FLAGS.model_dir)
-
     pool = Pool(processes=FLAGS.parallel, initargs=(lock, ))
 
     stopwatch.sw.enabled = FLAGS.profile or FLAGS.trace

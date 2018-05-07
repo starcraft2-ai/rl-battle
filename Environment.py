@@ -171,12 +171,13 @@ class A2CEnvironment(Environment):
     def get_optimizer_and_node(self):
         return self.agent.get_optimizer_and_node()
 
-    def set_model(self, model, optimizer, root):
+    def set_model(self, model, optimizer, root, writer = None):
         self.model = model
         self.agent.model = model
         self.optimizer = optimizer
         self.root = root
         self.global_step = tf.train.get_or_create_global_step()
+        self.writer = writer
 
     def load_model(self, checkpoint_dir):
         self.agent.load_model(checkpoint_dir)
