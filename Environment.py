@@ -89,10 +89,11 @@ class A2CEnvironment(Environment):
         actaully `observation` is `last_observation`
         '''
         # take long CPU time
-        if(self.last_features):
-            result = self.agent.act(self.last_features)
-        else:
-            result = self.agent.step(observation)
+        # false action
+        # if(self.last_features):
+        #     result = self.agent.act(self.last_features)
+        # else:
+        result = self.agent.step(observation)
            
         return result
 
