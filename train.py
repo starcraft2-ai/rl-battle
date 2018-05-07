@@ -2,6 +2,7 @@ import sys
 from functools import reduce
 from multiprocessing import Pool, Lock
 
+import collections
 
 from pysc2 import maps
 from pysc2.env import available_actions_printer
@@ -50,6 +51,7 @@ flags.DEFINE_string("summary_dir", "summary", "where save and load summary")
 
 flags.DEFINE_integer("save_every", 500, "Save model checkpoint every n steps.")
 flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
+flags.DEFINE_integer("replay_buffer_size", 1000, "Replay Buffer Size.")
 
 flags.DEFINE_string("map", None, "Name of a map to use.")
 flags.mark_flag_as_required("map")
@@ -60,7 +62,7 @@ import tensorflow as tf
 lock = Lock()
 agent_model = None
 (optimizer, root_node) = None, None
-replay_buffer = []
+replay_buffer = None
 writer = None
 
 
@@ -110,6 +112,8 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
 
 def main(unused_argv):
     """Run an agent."""
+    global replay_buffer
+    replay_buffer = collections.deque(maxlen=FLAGS.replay_buffer_size)
     pool = Pool(processes=FLAGS.parallel, initargs=(lock, ))
 
     stopwatch.sw.enabled = FLAGS.profile or FLAGS.trace
