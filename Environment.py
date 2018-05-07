@@ -48,7 +48,7 @@ class Environment:
 
 
 class A2CEnvironment(Environment):
-    def __init__(self, lock: Lock, agent_class, model=None, M=16, gamma=0.2, writer = None):
+    def __init__(self, lock: Lock, agent_class, model=None, M=16, gamma=0.9, writer = None):
         '''
         init environment instance
         '''
@@ -101,60 +101,79 @@ class A2CEnvironment(Environment):
         '''
         Actor-Critic Algorithm
         '''
-        # transition = (before_step_observation, self.last_action, observation)
-        # last_reward = self.last_observation.reward
-        # self.replay_buffer.append(transition)
-
-        # TODO: discover the possibliby of using batch on PySC2
-        # Maybe not
-        # samples = random.sample(self.replay_buffer, self.M)
-        # for (observation_0, action, observation_1) in samples:
-        #     (_, _, value_1) = self.agent.simulate(observation_1)
-
         # Online
         self.global_step.assign_add(1, use_locking=True)
-        with tfe.GradientTape() as tape:
-            (
-                before_coordinate, 
-                before_action, 
-                before_value
-            ) = self.agent.fit(before_step_observation)
-            (coordinate, action, value) = self.agent.fit(observation)
-            self.last_features = (coordinate, action, value)
+        with self.writer.as_default() :
+            with tf.contrib.summary.record_summaries_every_n_global_steps(1, self.global_step) :
+                with  tfe.GradientTape() as tape:
+                    (
+                        before_coordinate, 
+                        before_action, 
+                        before_value
+                    ) = self.agent.fit(before_step_observation)
 
-            target_value = before_step_observation.reward + self.gamma * value[0]
+                    # Add single
+                    # transition = (
+                    #     before_step_observation, 
+                    #     (
+                    #         before_coordinate.numpy(), 
+                    #         before_action.numpy(), 
+                    #         before_value.numpy()
+                    #     ), 
+                    #     observation
+                    # )
+                    # with self.lock:
+                    #     self.replay_buffer.append(transition)
 
-            #TODO: why
-            advantage = tf.stop_gradient(target_value - before_value)
+                    # # TODO: discover the possibliby of using batch on PySC2
+                    # # Maybe not
+                    # samples = random.sample(self.replay_buffer, self.M)
 
-            coordinate_log_prob = tf.log(
-                tf.clip_by_value(
-                    tf.reduce_sum(before_coordinate)
-                    , 1e-10, 1.
-            ))
-            action_log_prob = tf.log(
-                tf.clip_by_value(
-                    tf.reduce_sum(before_action)
-                    , 1e-10, 1.
-            ))
+                    # reward_sum = 0.
+                    # for (
+                    #     in_batch_observation_before, 
+                    #     in_batch_action, 
+                    #     in_batch_observation_observation_after
+                    #     ) in samples:
+                    #     (_, _, in_batch_before_value) = in_batch_action
+                    #     in_batch_reaward = in_batch_observation_observation_after.reward
+                    #     in_batch_value   = in_batch_value
 
-            loss_policy = - tf.reduce_mean((coordinate_log_prob + action_log_prob) * advantage)
-            loss_value = - tf.reduce_mean(target_value * advantage)
 
-            loss = loss_policy + loss_value
 
-            if self.writer:
-                with self.lock and self.writer.as_default():
-                    with tf.contrib.summary.record_summaries_every_n_global_steps(self.summary_n_step):
-                        tf.contrib.summary.scalar('score', self.agent.reward)
-                        tf.contrib.summary.scalar('loss/policy', loss_policy)
-                        tf.contrib.summary.scalar('loss/value', loss_value)
-                        tf.contrib.summary.scalar('loss', loss)
+                    (coordinate, action, value) = self.agent.fit(observation)
+                    self.last_features = (coordinate, action, value)
 
-        # Tape
-        grads = tape.gradient(loss, self.agent.model.variables)
-        self.optimizer.apply_gradients(
-            zip(grads, self.agent.model.variables))
+                    target_value = before_step_observation.reward + self.gamma * value[0]
+
+                    #TODO: why
+                    advantage = tf.stop_gradient(target_value - before_value)
+
+                    coordinate_log_prob = tf.log(
+                        tf.clip_by_value(
+                            tf.reduce_sum(before_coordinate)
+                            , 1e-10, 1.
+                    ))
+                    action_log_prob = tf.log(
+                        tf.clip_by_value(
+                            tf.reduce_sum(before_action)
+                            , 1e-10, 1.
+                    ))
+
+                    loss_policy = - tf.reduce_mean((coordinate_log_prob + action_log_prob) * advantage)
+                    loss_value = - tf.reduce_mean(target_value * advantage)
+
+                    loss = loss_policy + loss_value
+
+                    tf.contrib.summary.scalar('score', self.agent.reward)
+                    tf.contrib.summary.scalar('loss/policy', loss_policy)
+                    tf.contrib.summary.scalar('loss/value', loss_value)
+                    tf.contrib.summary.scalar('loss/total', loss)
+
+                # Tape
+                grads = tape.gradient(loss, self.agent.model.variables)
+                self.optimizer.apply_gradients(
+                    zip(grads, self.agent.model.variables))
 
     def set_replay_buffer(self, replay_buffer):
         '''

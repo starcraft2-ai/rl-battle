@@ -20,6 +20,7 @@ class AtariAgent(ModelAgent):
         self.action_spec = None
         self.root = None
         self.checkpoint_dir = checkpoint_dir
+        self.global_step = None
 
     def setup(self, obs_spec, action_spec):
         super().setup(obs_spec, action_spec)
@@ -90,9 +91,11 @@ class AtariAgent(ModelAgent):
 
     def get_optimizer_and_node(self):
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        if self.global_step is None:
+            self.global_step = tf.train.get_or_create_global_step()
         root = tfe.Checkpoint(optimizer=optimizer,
                                    model=self.model,
-                                   optimizer_step=tf.train.get_or_create_global_step())
+                                   optimizer_step=self.global_step)
         return (optimizer, root)
 
     def load_model(self, checkpoint_dir):
