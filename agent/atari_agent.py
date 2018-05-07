@@ -114,7 +114,7 @@ class AtariAgent(ModelAgent):
       
         # real training part
         start = time.time()
-        with tf.contrib.summary.record_summaries_every_n_global_steps(10, global_step=step_counter):
+        with tf.contrib.summary.record_summaries_every_n_global_steps(1, global_step=step_counter):
             with tfe.GradientTape() as tape:
                 coordinate, action, value = self.model(x)
                 loss_value = self.loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value)
