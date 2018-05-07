@@ -1,6 +1,8 @@
 # model
 model/
 summary/
+model*/
+summary*/
 .train-model/
 .train-summary/
 
