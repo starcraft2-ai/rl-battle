@@ -76,12 +76,17 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
         agent = agent_cls()
+
         if FLAGS.train is True:
-            for episode_rb in run_loop.run_loop([agent], env, FLAGS.max_agent_steps, training=True):
+            for episode_rb in run_loop.run_loop([agent], env, FLAGS.max_agent_steps, FLAGS.train):
                 # test_replay_buffer(rb)
                 agent.train_model(episode_rb, FLAGS.model_dir, FLAGS.discount, FLAGS.summary_dir)
         else:
-            run_loop.run_loop([agent], env, FLAGS.max_agent_steps, False, FLAGS.model_dir)
+            print('train', FLAGS.train)
+            print('model dir', FLAGS.model_dir)
+            print('max agent steps', FLAGS.max_agent_steps)
+            run_loop.run_loop([agent], env, FLAGS.max_agent_steps, FLAGS.train, FLAGS.model_dir)
+            print('Finished')
         
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)
