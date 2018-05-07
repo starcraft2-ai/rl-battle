@@ -12,18 +12,20 @@ possible_action_num = len(actions.FUNCTIONS)
 
 
 class AtariAgent(ModelAgent):
-    def __init__(self, name='AtariAgent', model=None):
+    def __init__(self, name='AtariAgent', model=None, checkpoint_dir='model'):
         super().__init__()
         self.name = name
         self.model: AtariModel = model
         self.obs_spec = None
         self.action_spec = None
         self.root = None
+        self.checkpoint_dir = checkpoint_dir
 
     def setup(self, obs_spec, action_spec):
         super().setup(obs_spec, action_spec)
         if(self.model is None):
             self.build_model()
+            self.load_model(self.checkpoint_dir)
 
     def reset(self):
         super().reset()

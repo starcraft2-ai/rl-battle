@@ -17,7 +17,7 @@
 import time
 
 
-def run_loop(agents, env, max_frames=0, auto_call = 50, every_auto_call = None):
+def run_loop(agents, env, max_frames=0, auto_call = 100, every_auto_call = None):
   """A run loop to have agents and an environment interact."""
   total_frames = 0
   start_time = time.time()

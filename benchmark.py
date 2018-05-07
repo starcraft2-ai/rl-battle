@@ -62,10 +62,16 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
                              FLAGS.minimap_resolution),
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
-        agent = agent_cls()
+        
 
-        if(FLAGS.model_dir and agent_cls is not RandomAgent):
-            agent.load_model(FLAGS.model_dir)
+        # won;t work
+        # if(FLAGS.model_dir and agent_cls is not RandomAgent):
+        #     agent.load_model(FLAGS.model_dir)
+        if(FLAGS.model_dir and agent_cls in [AtariAgent]):
+            agent = agent_cls(checkpoint_dir=FLAGS.model_dir)
+        else:
+            agent = agent_cls()
+
         run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
         
         if FLAGS.save_replay:

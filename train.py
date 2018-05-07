@@ -46,19 +46,24 @@ flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 
 flags.DEFINE_string("model_dir", "model", "where save and load model")
 flags.mark_flag_as_required("model_dir")
+flags.DEFINE_integer("save_every", 500, "Save model checkpoint every n steps.")
 flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
 
 flags.DEFINE_string("map", None, "Name of a map to use.")
 flags.mark_flag_as_required("map")
+
+import tensorflow as tf
 
 # Multi Process things
 lock = Lock()
 agent_model = None
 (optimizer, root_node) = None, None
 replay_buffer = []
+writer = None
+
 
 def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
-    global lock, agent_model, replay_buffer, optimizer, root_node
+    global lock, agent_model, replay_buffer, optimizer, root_node, writer
     with sc2_env.SC2Env(
             map_name=map_name,
             agent_race=FLAGS.agent_race,
@@ -74,11 +79,11 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
         (action_spec, observation_spec) = (
             env.action_spec(),
             env.observation_spec()
-            )
+        )
 
         agent_env = A2CEnvironment(lock, agent_cls)
         agent_env.set_sepcs(action_spec, observation_spec)
-        
+
         agent_env.set_replay_buffer(replay_buffer)
         with lock:
             if agent_model is None:
@@ -87,9 +92,10 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
         agent_env.set_model(agent_model, optimizer, root_node)
 
         def save_func():
-            agent_env.save_model(FLAGS.model_dir) 
+            agent_env.save_model(FLAGS.model_dir)
         agent_env.load_model(FLAGS.model_dir)
-        train_runloop.run_loop([agent_env], env, FLAGS.max_agent_steps, 50, save_func)
+        train_runloop.run_loop(
+            [agent_env], env, FLAGS.max_agent_steps, FLAGS.save_every, save_func)
 
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)
@@ -99,6 +105,9 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
 
 def main(unused_argv):
     """Run an agent."""
+    global writer
+    writer = tf.contrib.summary.create_file_writer(FLAGS.model_dir)
+
     pool = Pool(processes=FLAGS.parallel, initargs=(lock, ))
 
     stopwatch.sw.enabled = FLAGS.profile or FLAGS.trace

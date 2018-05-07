@@ -48,7 +48,7 @@ class Environment:
 
 
 class A2CEnvironment(Environment):
-    def __init__(self, lock: Lock, agent_class, model=None, M=16, gamma=0.2):
+    def __init__(self, lock: Lock, agent_class, model=None, M=16, gamma=0.2, writer = None):
         '''
         init environment instance
         '''
@@ -62,6 +62,9 @@ class A2CEnvironment(Environment):
         self.gamma = gamma
         self.action_spec = None
         self.observation_spec = None
+        self.summary_n_step = 100
+        self.global_step = None
+        self.writer = writer
 
     def set_sepcs(self, action_spec, observation_spec):
         self.agent.set_sepcs(action_spec, observation_spec)
@@ -108,6 +111,7 @@ class A2CEnvironment(Environment):
         #     (_, _, value_1) = self.agent.simulate(observation_1)
 
         # Online
+        self.global_step.assign_add(1, use_locking=True)
         with tfe.GradientTape() as tape:
             (
                 before_coordinate, 
@@ -138,7 +142,13 @@ class A2CEnvironment(Environment):
 
             loss = loss_policy + loss_value
 
-            tf.contrib.summary.scalar('loss', loss)
+            if self.writer:
+                with self.lock and self.writer.as_default():
+                    with tf.contrib.summary.record_summaries_every_n_global_steps(self.summary_n_step):
+                        tf.contrib.summary.scalar('score', self.agent.reward)
+                        tf.contrib.summary.scalar('loss/policy', loss_policy)
+                        tf.contrib.summary.scalar('loss/value', loss_value)
+                        tf.contrib.summary.scalar('loss', loss)
 
         # Tape
         grads = tape.gradient(loss, self.agent.model.variables)
@@ -166,6 +176,7 @@ class A2CEnvironment(Environment):
         self.agent.model = model
         self.optimizer = optimizer
         self.root = root
+        self.global_step = tf.train.get_or_create_global_step()
 
     def load_model(self, checkpoint_dir):
         self.agent.load_model(checkpoint_dir)
