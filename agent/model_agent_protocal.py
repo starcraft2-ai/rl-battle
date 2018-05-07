@@ -30,6 +30,7 @@ class ModelAgent(object):
         self.rewards[-1] += obs.reward
         if obs.last():
             self.rewards.append(0)
+            self.reward = 0
         return actions.FunctionCall(0, [])
 
     def act(self, features):
