@@ -95,8 +95,8 @@ class AtariAgent(ModelAgent):
       value_loss = - tf.reduce_mean(value * error)
 
       # record losses
-      tf.contrib.summary.scalar('policy_loss', policy_loss)
-      tf.contrib.summary.scalar('value_loss', value_loss)
+      tf.contrib.summary.scalar('loss/policy_loss', policy_loss)
+      tf.contrib.summary.scalar('loss/value_loss', value_loss)
       return policy_loss + value_loss
 
     def _train(self, optimizer, episode_rb, step_counter, discount, log_interval=None):
@@ -118,7 +118,8 @@ class AtariAgent(ModelAgent):
             with tfe.GradientTape() as tape:
                 coordinate, action, value = self.model(x)
                 loss_value = self.loss(coordinate, action, value, valid_coordinate, selected_coordinate, valid_action, selected_action, target_value)
-                tf.contrib.summary.scalar('loss', loss_value)
+                tf.contrib.summary.scalar('loss/loss', loss_value)
+                tf.contrib.summary.scalar('train_score', episode_rb[-1][-1].observation['score_cumulative'])
             grads = tape.gradient(loss_value, self.model.variables)
             optimizer.apply_gradients(zip(grads, self.model.variables), global_step=step_counter)
             if log_interval and step_counter.numpy() % log_interval == 0:

@@ -1,6 +1,7 @@
 import sys
 from functools import reduce
 from multiprocessing import Pool
+import os
 
 
 from pysc2 import maps
@@ -71,7 +72,7 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
 
         if FLAGS.train is True:
             for episode_rb in train_run_loop.run_loop([agent], env, FLAGS.max_agent_steps):
-                agent.train_model(episode_rb, FLAGS.model_dir, FLAGS.discount, FLAGS.summary_dir)
+                agent.train_model(episode_rb, FLAGS.model_dir, FLAGS.discount, os.path.join(FLAGS.summary_dir, 'train'))
         else:
             test_run_loop.run_loop([agent], env, FLAGS.max_agent_steps, FLAGS.model_dir)
         
