@@ -1,82 +1,161 @@
-from Environment import Environment
-from Models import ActorNetwork, CriticNetwork
-from utils import *
+import sys
+from functools import reduce
+from multiprocessing import Pool, Lock
 
-import argparse
+import collections
 
-parser = argparse.ArgumentParser(
-    description='Multi-Agent Reinforcement learning on StarCraft 2 Trainer')
-parser.add_argument('--episodes', '-e', type=int, default=100,
-                    help='Total episode to reinforce')
-parser.add_argument('--maxsteps', '-s', type=int, default=800,
-                    help='maximium steps to run on game')
-parser.add_argument('--map', '-m', default='',
-                    help='map to run the game')
-parser.add_argument('--screensize', type=int, default=84,
-                    help='screen resolution')
-parser.add_argument('--minisize', type=int, default=64,
-                    help='minimap resolution')
-parser.add_argument('--sample_batch_size', '-b', type=int, default=8,
-                    help='sample_batch_size')
-parser.add_argument('--lambdaa', type=float, default=0.2,
-                    help='Discount rate')
-parser.add_argument('--learning_rate', type=float, default=0.1,
-                    help='Learning rate')
-args = parser.parse_args()
+from pysc2 import maps
+from pysc2.env import available_actions_printer
+import train_runloop
+from pysc2.env import sc2_env
+from pysc2.lib import stopwatch
+
+
+from absl import app
+from absl import flags
+
+# All model agents
+from agent.model_agent_protocal import ModelAgent
+from agent.atari_agent import AtariAgent
+
+from Environment import A2CEnvironment
+
+all_agent_classes = ["AtariAgent"]
+
+FLAGS = flags.FLAGS
+flags.DEFINE_bool("render", True, "Whether to render with pygame.")
+flags.DEFINE_integer("screen_resolution", 84,
+                     "Resolution for screen feature layers.")
+flags.DEFINE_integer("minimap_resolution", 84,
+                     "Resolution for minimap feature layers.")
+
+flags.DEFINE_integer("game_steps_per_episode", 2500, "Game steps per episode.")
+flags.DEFINE_integer("max_agent_steps", 2500 * 100, "Total agent steps.")
+
+flags.DEFINE_integer("step_mul", 8, "Game steps per agent step.")
+
+flags.DEFINE_string("agent_name", "RandomAgent",
+                    f"Which agent class to run, possible values: {all_agent_classes}")
+flags.DEFINE_enum("agent_race", None, sc2_env.races.keys(), "Agent's race.")
+flags.DEFINE_enum("bot_race", None, sc2_env.races.keys(), "Bot's race.")
+flags.DEFINE_enum("difficulty", None, sc2_env.difficulties.keys(),
+                  "Bot's strength.")
+
+flags.DEFINE_bool("profile", False, "Whether to turn on code profiling.")
+flags.DEFINE_bool("trace", False, "Whether to trace the code execution.")
+flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
+
+flags.DEFINE_string("model_dir", "model", "where save and load model")
+flags.mark_flag_as_required("model_dir")
+flags.DEFINE_string("summary_dir", "summary", "where save and load summary")
+
+flags.DEFINE_integer("save_every", 500, "Save model checkpoint every n steps.")
+flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
+flags.DEFINE_integer("replay_buffer_size", 1000, "Replay Buffer Size.")
+
+flags.DEFINE_string("map", None, "Name of a map to use.")
+flags.mark_flag_as_required("map")
 
 import tensorflow as tf
 
-
-def main():
-    actor = ActorNetwork()
-    critic = CriticNetwork()
-
-    target_actor = ActorNetwork()
-    target_critic = CriticNetwork()
-
-    R = Buffer()
-
-    env = Environment(screen_size=args.screensize, minimap_size=args.minisize)
-    env.init_env()
-
-    for episodes in range(args.episodes):
-        env.reset_env()
-        state = env.get_current_state()
-
-        for t in range(args.maxsteps):
-            (actions_table, coordinates) = actor.forward(state)
-            best_action = best_actions(actions_table)
-
-            if not env.transit(best_action):
-                # Game over
-                break
-
-            reward = env.get_reward()
-            new_state = env.get_current_state()
-
-            R.add((state, best_action, new_state))
-            M = R.sample(args.sample_batch_size)
-
-            Qs = []
-            for transition in M:
-                (_, _, trans_state_next) = transition
-                (trans_actions_table_next, _) = target_actor.forward(trans_state_next)
-                trans_best_action_next = best_actions(trans_actions_table_next)
-
-                Qs.append(
-                    target_critic.forward(
-                        trans_state_next, trans_best_action_next) * args.lambdaa + reward
-                )
-
-            # TODO: BP
-
-            target_actor = target_actor * \
-                (1 - args.learning_rate) + args.learning_rate * actor
-            target_critic = target_critic * \
-                (1 - args.learning_rate) + args.learning_rate * critic
-
-            state = new_state
+# Multi Process things
+lock = Lock()
+agent_model = None
+(optimizer, root_node) = None, None
+replay_buffer = None
+writer = None
 
 
-if __name__ == '__main__':
-    main()
+def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
+    global lock, agent_model, replay_buffer, optimizer, root_node, writer
+    with sc2_env.SC2Env(
+            map_name=map_name,
+            agent_race=FLAGS.agent_race,
+            bot_race=FLAGS.bot_race,
+            difficulty=FLAGS.difficulty,
+            step_mul=FLAGS.step_mul,
+            game_steps_per_episode=FLAGS.game_steps_per_episode,
+            screen_size_px=(FLAGS.screen_resolution, FLAGS.screen_resolution),
+            minimap_size_px=(FLAGS.minimap_resolution,
+                             FLAGS.minimap_resolution),
+            visualize=visualize) as env:
+        env = available_actions_printer.AvailableActionsPrinter(env)
+        (action_spec, observation_spec) = (
+            env.action_spec(),
+            env.observation_spec()
+        )
+
+        agent_env = A2CEnvironment(lock, agent_cls)
+        agent_env.set_sepcs(action_spec, observation_spec)
+
+        agent_env.set_replay_buffer(replay_buffer)
+        with lock:
+            if agent_model is None:
+                agent_model = agent_env.build_model()
+                writer = tf.contrib.summary.create_file_writer(
+                    FLAGS.summary_dir, flush_millis=10*1000)
+                (optimizer, root_node) = agent_env.get_optimizer_and_node()
+        agent_env.set_model(model=agent_model,
+                            optimizer=optimizer, root=root_node, writer=writer)
+
+        def save_func():
+            agent_env.save_model(FLAGS.model_dir)
+        agent_env.load_model(FLAGS.model_dir)
+        train_runloop.run_loop(
+            [agent_env], env, FLAGS.max_agent_steps, FLAGS.save_every, save_func)
+
+        if FLAGS.save_replay:
+            env.save_replay(agent_cls.__name__)
+
+        return agent_env
+
+
+def main(unused_argv):
+    """Run an agent."""
+    global replay_buffer
+    replay_buffer = collections.deque(maxlen=FLAGS.replay_buffer_size)
+    pool = Pool(processes=FLAGS.parallel, initargs=(lock, ))
+
+    stopwatch.sw.enabled = FLAGS.profile or FLAGS.trace
+    stopwatch.sw.trace = FLAGS.trace
+
+    maps.get(FLAGS.map)  # Assert the map exists.
+
+    agent_cls = getattr(sys.modules[__name__], FLAGS.agent_name)
+
+    async_results = [pool.apply_async(run_thread, (
+        agent_cls, FLAGS.map, FLAGS.render)) for which in range(FLAGS.parallel)]
+
+    # Can do anything here
+
+    agent_envs = [r.get() for r in async_results]
+
+    last_scores = [env.agent.reward for env in agent_envs]
+
+    print_stastic(last_scores)
+
+    # After all threads done
+
+    if FLAGS.profile:
+        print(stopwatch.sw)
+
+
+def entry_point():  # Needed so setup.py scripts work.
+    app.run(main)
+
+
+def print_stastic(last_scores):
+    avgscore = sum(last_scores)/len(last_scores)
+    maxscore = max(last_scores)
+    minscore = min(last_scores)
+    print('Last Scores:', last_scores, file=sys.stderr)
+    print(f"\
+            In Parallel:{len(last_scores)}\n\
+            AverageScore:{round(avgscore, 2)}\n\
+            MaxScore:{maxscore}\n\
+            ", file=sys.stderr)
+    return {'Eposide_num': len(last_scores), 'Avgscore': avgscore, 'Maxscore': maxscore, 'Minscore': minscore}
+
+
+if __name__ == "__main__":
+    app.run(main)

@@ -5,7 +5,7 @@ from multiprocessing import Pool
 
 from pysc2 import maps
 from pysc2.env import available_actions_printer
-from pysc2.env import run_loop
+from realtime_runloop import run_loop
 from pysc2.env import sc2_env
 from pysc2.lib import stopwatch
 
@@ -42,6 +42,10 @@ flags.DEFINE_bool("profile", False, "Whether to turn on code profiling.")
 flags.DEFINE_bool("trace", False, "Whether to trace the code execution.")
 flags.DEFINE_integer("parallel", 1, "How many instances to run in parallel.")
 
+flags.DEFINE_bool("realtime", False, "Whether to realtime run the game.")
+flags.DEFINE_float("fps", 22.4, "Only works if realtime is on")
+
+flags.DEFINE_string("model_dir", "model", "where save and load model")
 flags.DEFINE_bool("save_replay", False, "Whether to save a replay at the end.")
 
 flags.DEFINE_string("map", None, "Name of a map to use.")
@@ -61,8 +65,18 @@ def run_thread(agent_cls: ModelAgent.__class__, map_name, visualize):
                              FLAGS.minimap_resolution),
             visualize=visualize) as env:
         env = available_actions_printer.AvailableActionsPrinter(env)
-        agent = agent_cls()
-        run_loop.run_loop([agent], env, FLAGS.max_agent_steps)
+        
+
+        # won;t work
+        # if(FLAGS.model_dir and agent_cls is not RandomAgent):
+        #     agent.load_model(FLAGS.model_dir)
+        if(FLAGS.model_dir and agent_cls in [AtariAgent]):
+            agent = agent_cls(checkpoint_dir=FLAGS.model_dir)
+        else:
+            agent = agent_cls()
+
+        fps_flag = FLAGS.fps/FLAGS.step_mul if FLAGS.realtime else False
+        run_loop([agent], env, FLAGS.max_agent_steps, fps_flag)
         
         if FLAGS.save_replay:
             env.save_replay(agent_cls.__name__)
@@ -82,7 +96,7 @@ def main(unused_argv):
     agent_cls = getattr(sys.modules[__name__], FLAGS.agent_name)
 
     async_results = [pool.apply_async(run_thread, (
-        agent_cls, FLAGS.map, False)) for which in range(FLAGS.parallel)]
+        agent_cls, FLAGS.map, FLAGS.render)) for which in range(FLAGS.parallel)]
 
     # Can do anything here
 

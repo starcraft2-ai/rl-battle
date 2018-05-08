@@ -23,9 +23,17 @@ Run `MoveToBeacon` map with random agent
 python benchmark.py --map MoveToBeacon --agent_name RandomAgent
 ```
 
-### Training
-Please checkout different [branch](#Important)
+### Live Time Run Agent for Demo
+run `DefeatRoaches` map with realtime 
+``` shell
+python benchmark.py --map DefeatRoaches --agent_name AtariAgent  --parallel=1 --render=False  --realtime=True --fps=22.4 
+```
 
+### Training
+Traning `DefeatRoaches` map using 24 process running in parallel
+``` shell
+python train.py --map DefeatRoaches --agent_name AtariAgent --parallel=24 --render=False
+```
 ## Prepare
 
 #### Python environment
