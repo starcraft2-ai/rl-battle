@@ -5,7 +5,13 @@ Reinforcement Learning Agents implmented in Tensorflow, featuring:
 
 List of implemented Agents are:
 - Random Agent
-- Atari Agent (from deepmind minigame)
+- [Modified A3C Agent](https://github.com/starcraft2-ai/rl-battle/tree/A/C-online)
+- [Modified A2C Agent](https://github.com/starcraft2-ai/rl-battle/tree/a2c-episode-total-advantage)
+
+# Important 
+Checkout the following branch before running
+- [A3C](https://github.com/starcraft2-ai/rl-battle/tree/A/C-online)
+- [A2C](https://github.com/starcraft2-ai/rl-battle/tree/a2c-episode-total-advantage)
 
 ## Benchmarks
 See our [this repo](https://github.com/starcraft2-ai/comparison)
@@ -16,6 +22,9 @@ Run `MoveToBeacon` map with random agent
 ```shell
 python benchmark.py --map MoveToBeacon --agent_name RandomAgent
 ```
+
+### Training
+Please checkout different [branch](#Important)
 
 ## Prepare
 

@@ -1,10 +1,8 @@
-# model
+# Model
 model/
+models/
 summary/
-model*/
-summary*/
-.train-model/
-.train-summary/
+summaries/
 
 # IDE
 .vscode/
