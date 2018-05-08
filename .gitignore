@@ -1,3 +1,9 @@
+# Model
+model/
+models/
+summary/
+summaries/
+
 # IDE
 .vscode/
 .idea/
